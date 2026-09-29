@@ -256,6 +256,18 @@ table.data td.bad{color:var(--bad);font-weight:600} table.data td.warn{color:var
 select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .hiddenvid{position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none}
+@media (orientation:landscape) and (max-height:540px){
+  .stage{--stageH:calc(100svh - 16px);grid-template-columns:minmax(0,var(--colL)) minmax(0,var(--colR));gap:10px}
+  .ratioGrp{display:flex!important}
+  .v3d{height:var(--stageH);min-height:0}
+  .vcard{height:var(--stageH);min-height:0;padding:8px;gap:6px}
+  .vcard h3{font-size:13px}
+  .ovwrap{flex:1;height:auto}
+  .co{font-size:10px;max-width:118px;padding:3px 6px}.co .v{font-size:11px;white-space:normal}.co .t{font-size:9.5px}
+  .hud{font-size:10px;padding:5px 7px}.hudL td:first-child{font-size:10px}.hudR .ty{font-size:13px}
+  .legend{display:none}
+  .zoombar .btn{padding:2px 7px}.ovhint{display:none}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -349,7 +361,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     </div>
     <div class="stage" id="stage" data-ratio="5:5">
       <div class="v3d" id="v3d">
-        <canvas class="gl" id="gl" aria-label="3D 動作重建"></canvas>
+        <canvas class="gl" id="gl" aria-label="動作分析（3D）"></canvas>
         <div class="hud hudL" id="hudL" hidden></div>
         <div class="hud hudR" id="hudR" hidden><span class="ty" id="hudType"></span><span class="ph" id="hudPhase"></span><span class="tc" id="hudTc"></span></div>
         <div class="hud legend" id="legend">
@@ -361,12 +373,12 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <div class="callouts" id="callouts"><svg id="coSvg"></svg></div>
         <div class="impact" id="impact" hidden><b>IMPACT · 擊球瞬間</b><div class="pb"><i id="impactBar"></i></div></div>
         <div class="flash" id="flash"></div>
-        <div class="empty3d" id="empty3d"><div><b>3D 動作捕捉實驗室</b><p>上傳影片後，這裡會出現你的半透明人形（黃色）和矯正版（青色）疊在一起播放，旁邊是原始影片疊骨架。可以用滑鼠或手指旋轉視角。</p></div></div>
+        <div class="empty3d" id="empty3d"><div><b>動作分析</b><p>上傳影片後，這裡會出現你的半透明人形（黃色）和矯正版（青色）疊在一起播放，旁邊是原始影片（疊上骨架）。可以用滑鼠或手指旋轉視角。</p></div></div>
       </div>
       <aside class="side">
         <div class="card vcard">
-          <h3>原始影片疊骨架 <span class="tag" id="ovTag">—</span></h3>
-          <div class="ovwrap" id="ovWrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片疊上骨架，可用滑鼠滾輪或兩指縮放、拖曳移動"></canvas>
+          <h3>原始影片 <span class="tag" id="ovTag">—</span></h3>
+          <div class="ovwrap" id="ovWrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片（疊上骨架），可用滑鼠滾輪或兩指縮放、拖曳移動"></canvas>
             <span class="ovhint" id="ovHint">滾輪／兩指縮放 · 拖曳移動 · 雙擊重設</span>
             <div class="zoombar"><button class="btn" id="zOut" aria-label="縮小">−</button><span class="zv" id="zVal">100%</span><button class="btn" id="zIn" aria-label="放大">＋</button><button class="btn" id="zReset">重設</button></div>
           </div>
