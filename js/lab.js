@@ -731,6 +731,19 @@
     st.videoOk = true;
     vP.onerror = () => { if (vP.error && vP.error.code >= 3) st.videoOk = false; };
     vP.playbackRate = st.speed;
+    // 以「畫面上實際顯示的那一格」的時間當主時鐘：iPhone Safari 播 HEVC 時 currentTime 可能卡住好幾秒，
+    // 但影片畫面照樣在動，骨架就會對不上。requestVideoFrameCallback 回報的 mediaTime 是真正顯示中的格。
+    st.vfTime = null;
+    if (!st.vfHooked && 'requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+      st.vfHooked = true;
+      const onFrame = (now, meta) => { st.vfTime = meta.mediaTime; st.vfWall = performance.now(); vP.requestVideoFrameCallback(onFrame); };
+      vP.requestVideoFrameCallback(onFrame);
+    }
+  }
+  // 目前影片時間：播放中且有實際顯示格的回報時用它，否則（暫停、拖時間軸、剛跳格）用 currentTime
+  function videoTime() {
+    if (st.vfTime != null && !vP.paused && !vP.seeking && performance.now() - st.vfWall < 500) return st.vfTime;
+    return vP.currentTime;
   }
   function curShot() { return st.res?.shots.find((s) => s.idx === st.shot && !s.excluded) || null; }
   function selectShot(i, autoplay) {
@@ -745,13 +758,14 @@
     arrow.rotation.y = Math.atan2(fwd[0], fwd[2]);
     buildTimeline(s); buildHudRows(s); buildAnnotations(s);
     applyView(true);
-    st.frozen = false; $('impact').hidden = true;
+    st.frozen = false; st.frozeDone = false; $('impact').hidden = true;
     seekFrame(s.start);
     st.lastF = s.start;
     if (autoplay && !RM) play(); else pause();
   }
   function seekFrame(f) {
-    st.clockT = f / FPS;
+    st.clockT = f / FPS; st.vfTime = null; // 跳格後等新的一格顯示再用它的時間
+
     if (st.videoOk && vP.readyState >= 1) vP.currentTime = f / FPS;
   }
   function startVideo() {
@@ -1074,11 +1088,13 @@
         $('impactBar').style.width = `${Math.max(0, left / 2600 * 100)}%`;
         if (left <= 0) { st.frozen = false; $('impact').hidden = true; if (st.playing) startVideo(); }
       } else if (st.playing && !st.videoOk) st.clockT += dt * st.speed;
-      let t = st.videoOk ? vP.currentTime : st.clockT;
+      let t = st.videoOk ? videoTime() : st.clockT;
       let f = t * FPS;
       if (st.playing && !st.frozen) {
-        if (f >= s.end || f < s.start - 3) { seekFrame(s.start); f = s.start; st.lastF = s.start - 1; }
-        if (st.freeze && st.lastF < s.c && f >= s.c) {
+        if (f >= s.end || f < s.start - 3) { seekFrame(s.start); f = s.start; st.lastF = s.start - 1; st.frozeDone = false; }
+        // 每一輪只定格一次（結束後顯示格的時間可能略早於擊球格，不能再觸發）
+        if (st.freeze && !st.frozeDone && st.lastF < s.c && f >= s.c) {
+          st.frozeDone = true;
           st.frozen = true; st.freezeEnd = now + 2600; f = s.c;
           if (st.videoOk) { vP.pause(); vP.currentTime = s.c / FPS; } else st.clockT = s.c / FPS;
           $('impact').hidden = false;
