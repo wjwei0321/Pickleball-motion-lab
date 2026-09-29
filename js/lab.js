@@ -1122,6 +1122,14 @@
       } else reset();
     });
     window.addEventListener('touchcancel', () => { if (pulling && !busy) reset(); });
+    // 從瀏覽器的返回快取（bfcache）還原時，舊頁面的「更新中」狀態會留著，導致下拉失效 → 還原時一律重設
+    const clear = () => { busy = false; el.classList.remove('spin', 'show', 'ready'); svg.style.transform = ''; txt.textContent = '下拉更新'; reset(); };
+    window.addEventListener('pageshow', (e) => { if (e.persisted) clear(); });
+    // 更新完把網址上的 ?r= 拿掉，讓更新後的頁面跟第一次打開完全一樣
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.has('r')) { u.searchParams.delete('r'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
+    } catch (e) { /* 不支援就保留網址 */ }
   })();
 
   // 供除錯
