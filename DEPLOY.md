@@ -8,7 +8,7 @@
 | 項目 | 值 |
 | --- | --- |
 | 專案資料夾 | `C:\Users\User\.antigravity\pickleball-motion-lab` |
-| GitHub repo | `https://github.com/SENSESOIL/pickleball-motion-lab`（**先跟使用者確認網址**；使用者有提供不同網址就以使用者的為準） |
+| GitHub repo | `https://github.com/wjwei0321/Pickleball-motion-lab`（Public，使用者已建立、目前是空的；本機 `origin` 已設定好） |
 | 分支 | `main` |
 | 網站類型 | 純靜態網站：沒有 build 步驟、沒有後端、不需要資料庫（不需要 Supabase）、不需要任何環境變數 |
 
@@ -34,14 +34,15 @@ vendor/mediapipe/vision_bundle.js  vendor/mediapipe/wasm/vision_wasm_internal.js
 
 ## 2. 推到 GitHub
 
-GitHub 上的 repo 如果還不存在，請使用者先在 GitHub 建立（空的 repo，不要勾選加 README／.gitignore／license），或用你可用的工具建立。然後：
+repo 已建立（空的），本機 `origin` 已指向它。直接推：
 
 ```powershell
-git remote add origin https://github.com/SENSESOIL/pickleball-motion-lab.git
+git remote -v        # 應顯示 https://github.com/wjwei0321/Pickleball-motion-lab.git
 git push -u origin main
 ```
 
-- 如果 `origin` 已存在，改用 `git remote set-url origin <網址>`。
+- 這個 repo 是 **Public**：再次確認 `git ls-files _test` 是空的才推。
+- 需要登入 GitHub 時用 `wjwei0321` 帳號。
 - 如果遠端已經有內容（例如建 repo 時勾了 README）導致 push 被拒：**不要 force push**，先 `git pull --rebase origin main` 合併後再推；有衝突就停下來問使用者。
 
 ## 3. 部署到 Vercel
