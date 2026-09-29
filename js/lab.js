@@ -1083,6 +1083,45 @@
     if (!st.res || e.target.closest('input,select,textarea')) return;
     if (e.key === ' ' && e.target === document.body) { e.preventDefault(); st.playing ? pause() : play(); }
   });
+  // ================= 手機下拉強制更新 =================
+  // 在頁面最上方往下拉：出現旋轉圖示，拉過門檻放開就從伺服器重新載入（網址加時間戳避開快取）
+  (function pullToRefresh() {
+    const TH = 70, MAX = 120;
+    const el = document.createElement('div');
+    el.className = 'ptr'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span class="ptr-t">下拉更新</span>';
+    document.body.appendChild(el);
+    const svg = el.querySelector('svg'), txt = el.querySelector('.ptr-t');
+    let y0 = null, d = 0, pulling = false, busy = false;
+    const place = (px) => { el.style.transform = `translate(-50%, ${px - 70}px)`; };
+    const reset = () => { pulling = false; y0 = null; d = 0; el.classList.add('back'); el.classList.remove('show', 'ready'); place(0); };
+    window.addEventListener('touchstart', (e) => {
+      if (busy || window.scrollY > 0 || e.touches.length !== 1 || e.target.closest('canvas, .v3d, .ovwrap, input, select, textarea, .tblwrap')) { y0 = null; return; }
+      y0 = e.touches[0].clientY; d = 0; el.classList.remove('back');
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (y0 == null || busy) return;
+      const dy = e.touches[0].clientY - y0;
+      if (dy <= 0 || window.scrollY > 0) { if (pulling) reset(); return; }
+      pulling = true;
+      if (e.cancelable) e.preventDefault();
+      d = Math.min(MAX, dy * 0.5);
+      el.classList.add('show'); el.classList.toggle('ready', d >= TH);
+      place(Math.min(d, TH + 10) + 10);
+      svg.style.transform = `rotate(${d * 4}deg)`;
+      txt.textContent = d >= TH ? (st.res ? '放開更新（目前的分析會清除）' : '放開更新') : '下拉更新';
+    }, { passive: false });
+    window.addEventListener('touchend', () => {
+      if (!pulling) { y0 = null; return; }
+      if (d >= TH) {
+        busy = true; svg.style.transform = ''; el.classList.add('spin'); el.classList.remove('ready'); txt.textContent = '更新中…';
+        const u = new URL(location.href); u.searchParams.set('r', Date.now());
+        setTimeout(() => location.replace(u.href), 350);
+      } else reset();
+    });
+    window.addEventListener('touchcancel', () => { if (pulling && !busy) reset(); });
+  })();
+
   // 供除錯
   window.PBLab = { st, selectShot, setView, startFile, analyzeAndBuild, makeThumbs };
 })();

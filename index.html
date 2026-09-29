@@ -26,6 +26,14 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{background:var(--bg)}
+html,body{overscroll-behavior-y:contain}
+.ptr{position:fixed;left:50%;top:0;z-index:50;transform:translate(-50%,-70px);display:flex;align-items:center;gap:8px;background:#0E1A24;border:1px solid #2a4457;border-radius:999px;padding:7px 14px 7px 8px;box-shadow:0 6px 20px rgba(0,0,0,.45);pointer-events:none;opacity:0;font-size:13px;color:var(--text);white-space:nowrap}
+.ptr.show{opacity:1}
+.ptr.back{transition:transform .25s ease,opacity .25s ease}
+.ptr svg{width:26px;height:26px;display:block;color:var(--player)}
+.ptr.ready svg{filter:drop-shadow(0 0 6px rgba(255,210,63,.6))}
+.ptr.spin svg{animation:ptrspin .8s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
 body{color:var(--text);font:15px/1.65 var(--f-body);margin:0}
 .wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:22px 60px;display:flex;flex-direction:column;gap:26px}
 @media (max-width:520px){.wrap{padding-inline:16px}}
