@@ -552,7 +552,26 @@
     const act = res.shots.filter((s) => !s.excluded);
     const keep = act.find((s) => s.peak === st.shotPeak); // 重新編號後，停在同一拍
     selectShot(act.length ? (keep || act[0]).idx : -1, first && !RM);
-    if (first) { makeThumbs(); $('secQC').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' }); }
+    if (first) { makeThumbs(); settleScrollTo($('secQC')); }
+  }
+
+  // 分析完成時上方的上傳區會收起、版面大幅移動，iPhone 上平滑捲動常被打斷而停在別處 →
+  // 等版面穩定後直接跳到目標，並在 1.2 秒內再校正兩次；使用者一碰螢幕就不再干涉
+  function settleScrollTo(el) {
+    const sc = $('scroller');
+    let cancelled = false;
+    const stop = () => { cancelled = true; };
+    window.addEventListener('touchstart', stop, { once: true, passive: true });
+    window.addEventListener('wheel', stop, { once: true, passive: true });
+    const jump = () => {
+      if (cancelled) return;
+      const useSc = sc && sc.scrollHeight > sc.clientHeight + 1 && getComputedStyle(sc).overflowY !== 'visible';
+      if (useSc) sc.scrollTop += el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8;
+      else window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 8);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(jump));
+    setTimeout(jump, 400); setTimeout(jump, 1200);
+    setTimeout(() => { window.removeEventListener('touchstart', stop); window.removeEventListener('wheel', stop); }, 1300);
   }
 
   function overlayTrack(raw) {
