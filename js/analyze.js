@@ -629,6 +629,9 @@
       return { idx: i, peak: h.peak, c: h.c, speed: h.speed, big: h.big, estimated: true,
         type: o.type || cl.type, autoType: cl.type, backhand: cl.backhand, twoHanded: cl.twoHanded, excluded: !!o.excluded };
     });
+    // 排除「不是擊球」後重新編號：剩下的拍依序是第 1、2、3… 拍；被排除的 idx = -1
+    let k = 0;
+    for (const s of shots) s.idx = s.excluded ? -1 : k++;
     const act = shots.filter((s) => !s.excluded);
     act.forEach((s, i) => {
       const r = shotMetrics(S, s, H, i > 0 ? act[i - 1].c : null, i < act.length - 1 ? act[i + 1].c : null);

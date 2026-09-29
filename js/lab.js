@@ -526,7 +526,7 @@
     }, () => st.cancel, st.range ? { f0: Math.round(st.range.a * FPS), f1: Math.floor(st.range.b * FPS) } : null);
     $('procEta').textContent = '';
     raw.name = st.file.name; raw.duration = vA.duration; raw.srcW = vA.videoWidth; raw.srcH = vA.videoHeight;
-    st.raw = raw; st.overrides = {}; st.thumbs = {}; resetZoom(); $('qcMsg').hidden = true;
+    st.raw = raw; st.overrides = {}; clearThumbs(); resetZoom(); $('qcMsg').hidden = true;
     stepUI(4, `偵測完成：${(raw.M || raw.N) - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
     await new Promise((r) => setTimeout(r, 30));
     stepUI(5, '找出擊球…', 0.94);
@@ -551,7 +551,8 @@
     }
     buildAll();
     const act = res.shots.filter((s) => !s.excluded);
-    selectShot(act.length ? (act.find((s) => s.idx === st.shot) ? st.shot : act[0].idx) : -1, first && !RM);
+    const keep = act.find((s) => s.peak === st.shotPeak); // 重新編號後，停在同一拍
+    selectShot(act.length ? (keep || act[0]).idx : -1, first && !RM);
     if (first) { makeThumbs(); $('secQC').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' }); }
   }
 
@@ -711,24 +712,23 @@
     $('handSel').innerHTML = `<option value="auto">從影片判斷（${res.hand === 'R' ? '右手' : '左手'}）</option><option value="R">右手</option><option value="L">左手</option>`;
     $('handSel').value = st.hand;
     $('qc').innerHTML = res.shots.map((s) => `<div class="qcard ${s.excluded ? 'ex' : ''}" data-peak="${s.peak}">
-      <canvas width="480" height="170" data-thumb="${s.peak}"></canvas>
-      <div class="r"><b style="font-weight:500">#${s.idx + 1} · <span class="mono">${A.fmtTime(s.c / FPS)}</span>${s.excluded ? ' <span class="extag">已排除</span>' : ''}</b><span class="mono" style="color:var(--sub);font-size:11.5px">手腕 ${s.speed.toFixed(1)} m/s${s.big ? '' : '（輕打）'}</span></div>
-      <div class="r"><select aria-label="第 ${s.idx + 1} 拍球種" data-type="${s.peak}" ${s.excluded ? 'disabled' : ''}>${opts}</select>
+      <div class="qthumb" data-thumb="${s.peak}">${st.thumbs[s.peak] ? `<img src="${st.thumbs[s.peak]}" alt="">` : '縮圖產生中…'}</div>
+      <div class="r"><b style="font-weight:500">${s.excluded ? '' : `#${s.idx + 1} · `}<span class="mono">${A.fmtTime(s.c / FPS)}</span>${s.excluded ? ' <span class="extag">已排除</span>' : ''}</b><span class="mono" style="color:var(--sub);font-size:11.5px">手腕 ${s.speed.toFixed(1)} m/s${s.big ? '' : '（輕打）'}</span></div>
+      <div class="r"><select aria-label="${A.fmtTime(s.c / FPS)} 這一拍的球種" data-type="${s.peak}" ${s.excluded ? 'disabled' : ''}>${opts}</select>
       <label><input type="checkbox" data-ex="${s.peak}" ${s.excluded ? 'checked' : ''}> 不是擊球</label></div></div>`).join('') || '<p style="color:var(--sub)">沒有偵測到擊球。</p>';
     res.shots.forEach((s) => { const sel = $('qc').querySelector(`[data-type="${s.peak}"]`); if (sel) sel.value = s.type; });
     $('qc').querySelectorAll('[data-type]').forEach((sel) => sel.addEventListener('change', () => { const k = sel.dataset.type; st.overrides[k] = { ...(st.overrides[k] || {}), type: sel.value };
       const n = res.shots.find((x) => String(x.peak) === k).idx + 1;
-      st.qcMsg = `✓ 已更新：第 ${n} 拍改成「${A.TYPES[sel.value].name}」，所有數據已重新計算。`; analyzeAndBuild(false); }));
+      st.qcMsg = `✓ 已更新：第 ${n} 拍（${A.fmtTime(res.shots.find((x) => String(x.peak) === k).c / FPS)}）改成「${A.TYPES[sel.value].name}」，所有數據已重新計算。`; analyzeAndBuild(false); }));
     $('qc').querySelectorAll('[data-ex]').forEach((cb) => cb.addEventListener('change', () => { const k = cb.dataset.ex; st.overrides[k] = { ...(st.overrides[k] || {}), excluded: cb.checked };
-      const n = res.shots.find((x) => String(x.peak) === k).idx + 1;
+      const when = A.fmtTime(res.shots.find((x) => String(x.peak) === k).c / FPS);
       analyzeAndBuild(false);
       const left = st.res.shots.filter((x) => !x.excluded).length;
-      $('qcMsg').textContent = cb.checked ? `✓ 已更新：第 ${n} 拍已排除，現在用 ${left} 拍重新計算所有數據（標頭、問題、逐拍數據、矯正版都已更新）。` : `✓ 已更新：第 ${n} 拍已加回，現在用 ${left} 拍重新計算所有數據。`;
+      $('qcMsg').textContent = cb.checked ? `✓ 已更新：${when} 那一拍已排除，${left === 0 ? '目前沒有任何擊球' : left === 1 ? '剩下 1 拍，重新編號為第 1 拍' : `剩下 ${left} 拍，重新編號為第 1–${left} 拍`}，所有數據都已重新計算（標頭、問題、逐拍數據、矯正版）。` : `✓ 已更新：${when} 那一拍已加回，現在共 ${left} 拍，已重新編號並重新計算。`;
       $('qcMsg').hidden = false; }));
     if (st.qcMsg) { $('qcMsg').textContent = st.qcMsg; $('qcMsg').hidden = false; st.qcMsg = null; }
-    for (const [peak, bmp] of Object.entries(st.thumbs)) { const cv = $('qc').querySelector(`[data-thumb="${peak}"]`); if (cv) cv.getContext('2d').drawImage(bmp, 0, 0); }
   }
-  $('handSel').addEventListener('change', () => { st.hand = $('handSel').value; st.overrides = {}; st.thumbs = {}; analyzeAndBuild(false); makeThumbs(); });
+  $('handSel').addEventListener('change', () => { st.hand = $('handSel').value; st.overrides = {}; clearThumbs(); analyzeAndBuild(false); makeThumbs(); });
 
   function buildMethod() {
     const { res, raw } = st, act = res.shots.filter((s) => !s.excluded);
@@ -758,12 +758,17 @@
   }
 
   // ---------- 品質檢查縮圖 ----------
+  // iPhone Safari 的 canvas 記憶體上限很低，超過後新的 canvas 會變黑 →
+  // 縮圖畫完就轉成圖片（object URL）、釋放 canvas；分析過程只共用兩個 canvas
+  function clearThumbs() { for (const u of Object.values(st.thumbs || {})) URL.revokeObjectURL(u); st.thumbs = {}; }
+  const thumbSub = document.createElement('canvas'); thumbSub.width = thumbSub.height = 160;
+  const thumbCv = document.createElement('canvas'); thumbCv.width = 480; thumbCv.height = 170;
   async function makeThumbs() {
     const res = st.res, raw = st.raw, P = window.PBPose;
     const token = (st.thumbToken = (st.thumbToken || 0) + 1);
     for (const s of res.shots) {
       if (st.thumbs[s.peak]) continue;
-      const cv = document.createElement('canvas'); cv.width = 480; cv.height = 170;
+      const cv = thumbCv;
       const ctx = cv.getContext('2d'); ctx.fillStyle = '#05090d'; ctx.fillRect(0, 0, 480, 170);
       const fr = [s.c - 4, s.c, s.c + 4].map((f) => Math.max(0, Math.min(raw.N - 1, f)));
       for (let i = 0; i < 3; i++) {
@@ -771,7 +776,7 @@
         const f = fr[i], I = raw.img[f];
         const side = res.overlay.side[f] * 0.95, cx = res.overlay.cx[f], cy = res.overlay.cy[f] - side * 0.05;
         const crop = { x: cx - side / 2, y: cy - side / 2, side };
-        const sub = document.createElement('canvas'); sub.width = sub.height = 160;
+        const sub = thumbSub; sub.getContext('2d').fillStyle = '#05090d'; sub.getContext('2d').fillRect(0, 0, 160, 160);
         await P.grabFrame(vA, f / FPS, sub, crop);
         const c2 = sub.getContext('2d');
         drawSkeleton(c2, I, crop, 160, res.hand, true, i === 1);
@@ -779,8 +784,11 @@
         ctx.fillStyle = i === 1 ? '#FFD23F' : '#7F97A6'; ctx.font = '11px IBM Plex Mono, monospace';
         ctx.fillText(i === 1 ? `擊球 ${f}` : `${f - s.c > 0 ? '+' : ''}${f - s.c}`, i * 160 + 6, 18);
       }
-      st.thumbs[s.peak] = cv;
-      const tgt = $('qc').querySelector(`[data-thumb="${s.peak}"]`); if (tgt) tgt.getContext('2d').drawImage(cv, 0, 0);
+      const blob = await new Promise((r) => cv.toBlob(r, 'image/jpeg', 0.82));
+      if (token !== st.thumbToken || !blob) return;
+      const url = URL.createObjectURL(blob);
+      st.thumbs[s.peak] = url;
+      const tgt = $('qc').querySelector(`[data-thumb="${s.peak}"]`); if (tgt) tgt.innerHTML = `<img src="${url}" alt="">`;
     }
   }
   function drawSkeleton(ctx, I, crop, size, hand, qc, emph, ref) {
@@ -825,6 +833,7 @@
   function curShot() { return st.res?.shots.find((s) => s.idx === st.shot && !s.excluded) || null; }
   function selectShot(i, autoplay) {
     st.shot = i;
+    st.shotPeak = st.res?.shots.find((x) => x.idx === i && !x.excluded)?.peak;
     const s = curShot();
     document.querySelectorAll('#shots [data-shot]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.shot === i)));
     document.querySelectorAll('#tbl tbody tr').forEach((tr) => tr.classList.toggle('cur', +tr.dataset.shot === i));
