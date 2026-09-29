@@ -266,6 +266,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .hiddenvid{position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none}
 @media (orientation:landscape) and (max-height:540px){
+  .upload{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
   .stage{--stageH:calc(100svh - 16px);grid-template-columns:minmax(0,var(--colL)) minmax(0,var(--colR));gap:10px}
   .ratioGrp{display:flex!important}
   .v3d{height:var(--stageH);min-height:0}
