@@ -419,7 +419,7 @@
     }, () => st.cancel);
     $('procEta').textContent = '';
     raw.name = st.file.name; raw.duration = vA.duration; raw.srcW = vA.videoWidth; raw.srcH = vA.videoHeight;
-    st.raw = raw; st.overrides = {}; st.thumbs = {}; resetZoom();
+    st.raw = raw; st.overrides = {}; st.thumbs = {}; resetZoom(); $('qcMsg').hidden = true;
     stepUI(4, `偵測完成：${raw.N - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
     await new Promise((r) => setTimeout(r, 30));
     stepUI(5, '找出擊球…', 0.94);
@@ -463,7 +463,6 @@
     const { res, raw } = st, act = res.shots.filter((s) => !s.excluded), d = res.diag;
     const counts = {}; act.forEach((s) => { counts[s.type] = (counts[s.type] || 0) + 1; });
     const typeStr = Object.entries(counts).map(([k, v]) => `${A.TYPES[k].short} ${v}`).join('・') || '沒有偵測到擊球';
-    $('ebMeta').textContent = '';
     $('eyebrow').innerHTML = `<b>MOTION ANALYSIS · PICKLEBALL</b><span>${act.length} 拍：${esc(typeStr)}</span><span>${esc(raw.name)}</span><span>${A.fmtTime(raw.duration)}</span><span>${raw.N} 格</span><span>33 關節點 3D 重建</span>`;
     if (!act.length) {
       $('title').innerHTML = '這支影片<em>沒有抓到擊球</em>';
@@ -604,12 +603,20 @@
     $('handSel').value = st.hand;
     $('qc').innerHTML = res.shots.map((s) => `<div class="qcard ${s.excluded ? 'ex' : ''}" data-peak="${s.peak}">
       <canvas width="480" height="170" data-thumb="${s.peak}"></canvas>
-      <div class="r"><b style="font-weight:500">#${s.idx + 1} · <span class="mono">${A.fmtTime(s.c / FPS)}</span></b><span class="mono" style="color:var(--sub);font-size:11.5px">手腕 ${s.speed.toFixed(1)} m/s${s.big ? '' : '（輕打）'}</span></div>
-      <div class="r"><select aria-label="第 ${s.idx + 1} 拍球種" data-type="${s.peak}">${opts}</select>
+      <div class="r"><b style="font-weight:500">#${s.idx + 1} · <span class="mono">${A.fmtTime(s.c / FPS)}</span>${s.excluded ? ' <span class="extag">已排除</span>' : ''}</b><span class="mono" style="color:var(--sub);font-size:11.5px">手腕 ${s.speed.toFixed(1)} m/s${s.big ? '' : '（輕打）'}</span></div>
+      <div class="r"><select aria-label="第 ${s.idx + 1} 拍球種" data-type="${s.peak}" ${s.excluded ? 'disabled' : ''}>${opts}</select>
       <label><input type="checkbox" data-ex="${s.peak}" ${s.excluded ? 'checked' : ''}> 不是擊球</label></div></div>`).join('') || '<p style="color:var(--sub)">沒有偵測到擊球。</p>';
     res.shots.forEach((s) => { const sel = $('qc').querySelector(`[data-type="${s.peak}"]`); if (sel) sel.value = s.type; });
-    $('qc').querySelectorAll('[data-type]').forEach((sel) => sel.addEventListener('change', () => { const k = sel.dataset.type; st.overrides[k] = { ...(st.overrides[k] || {}), type: sel.value }; analyzeAndBuild(false); }));
-    $('qc').querySelectorAll('[data-ex]').forEach((cb) => cb.addEventListener('change', () => { const k = cb.dataset.ex; st.overrides[k] = { ...(st.overrides[k] || {}), excluded: cb.checked }; analyzeAndBuild(false); }));
+    $('qc').querySelectorAll('[data-type]').forEach((sel) => sel.addEventListener('change', () => { const k = sel.dataset.type; st.overrides[k] = { ...(st.overrides[k] || {}), type: sel.value };
+      const n = res.shots.find((x) => String(x.peak) === k).idx + 1;
+      st.qcMsg = `✓ 已更新：第 ${n} 拍改成「${A.TYPES[sel.value].name}」，所有數據已重新計算。`; analyzeAndBuild(false); }));
+    $('qc').querySelectorAll('[data-ex]').forEach((cb) => cb.addEventListener('change', () => { const k = cb.dataset.ex; st.overrides[k] = { ...(st.overrides[k] || {}), excluded: cb.checked };
+      const n = res.shots.find((x) => String(x.peak) === k).idx + 1;
+      analyzeAndBuild(false);
+      const left = st.res.shots.filter((x) => !x.excluded).length;
+      $('qcMsg').textContent = cb.checked ? `✓ 已更新：第 ${n} 拍已排除，現在用 ${left} 拍重新計算所有數據（標頭、問題、逐拍數據、矯正版都已更新）。` : `✓ 已更新：第 ${n} 拍已加回，現在用 ${left} 拍重新計算所有數據。`;
+      $('qcMsg').hidden = false; }));
+    if (st.qcMsg) { $('qcMsg').textContent = st.qcMsg; $('qcMsg').hidden = false; st.qcMsg = null; }
     for (const [peak, bmp] of Object.entries(st.thumbs)) { const cv = $('qc').querySelector(`[data-thumb="${peak}"]`); if (cv) cv.getContext('2d').drawImage(bmp, 0, 0); }
   }
   $('handSel').addEventListener('change', () => { st.hand = $('handSel').value; st.overrides = {}; st.thumbs = {}; analyzeAndBuild(false); makeThumbs(); });
