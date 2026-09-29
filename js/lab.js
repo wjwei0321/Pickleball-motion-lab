@@ -322,7 +322,6 @@
   function hidePickWait() { clearInterval(waitTimer); waitTimer = null; $('pickWait').hidden = true; }
   $('file').addEventListener('click', showPickWait);
   $('file').addEventListener('cancel', hidePickWait); // Safari 16.4+、Chrome 113+ 取消選擇時會觸發
-  $('pickWaitX').addEventListener('click', hidePickWait); // 舊瀏覽器沒有 cancel 事件，讓使用者自己收起
   $('file').addEventListener('change', (e) => { hidePickWait(); const f = e.target.files[0]; e.target.value = ''; if (f) startFile(f); });
   const drop = $('drop');
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
