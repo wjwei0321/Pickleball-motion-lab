@@ -551,7 +551,7 @@
     buildAll();
     const act = res.shots.filter((s) => !s.excluded);
     const keep = act.find((s) => s.peak === st.shotPeak); // 重新編號後，停在同一拍
-    selectShot(act.length ? (keep || act[0]).idx : -1, first);
+    selectShot(act.length ? (keep || act[0]).idx : -1, true); // 第一次分析和之後的重新計算（排除、改球種、換慣用手）都自動播放
     if (first) { makeThumbs(); settleScrollTo($('secQC')); }
   }
 
