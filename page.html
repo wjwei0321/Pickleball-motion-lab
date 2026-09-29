@@ -1,0 +1,375 @@
+<title>Pickleball Motion Lab</title>
+<meta name="description" content="上傳匹克球影片，在瀏覽器裡做 33 關節點 3D 動作分析，並看到矯正後的動作疊在一起播放。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#081017; --panel:#0E1A24; --panel2:#0B151E; --line:#1D3243; --text:#DCE8EE; --sub:#7F97A6;
+  --player:#FF7A59; --fix:#5FE3F0; --bad:#FF4D6D; --ok:#7BE0A8; --warn:#FFC857; --kitchen:#B9F227;
+  --f-head:"Chakra Petch","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,"Noto Sans TC",monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{color:var(--text);font:15px/1.65 var(--f-body);margin:0}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:22px 60px;display:flex;flex-direction:column;gap:26px}
+@media (max-width:520px){.wrap{padding-inline:16px}}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:20px;font-weight:600;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font:500 11px var(--f-mono);letter-spacing:.14em;color:var(--sub);text-transform:uppercase}
+p{margin:0}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fix);outline-offset:2px;border-radius:6px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;line-height:1.4;transition:border-color .15s,background .15s;white-space:nowrap}
+.btn:hover{border-color:#2d4c63}
+.btn[aria-pressed="true"],.btn.on{border-color:var(--fix);background:#0f2a33;color:#e9fbfd}
+.btn.primary{background:var(--player);border-color:var(--player);color:#1a0b06;font-weight:700}
+.btn.primary:hover{background:#ff8c70}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg .btn{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg .btn:last-child{border-right:0}
+.lbl{font:500 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--sub)}
+
+/* header */
+.hdr{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.eyebrow{font:500 11.5px var(--f-mono);letter-spacing:.12em;color:var(--sub);text-transform:uppercase;display:flex;flex-wrap:wrap;gap:4px 12px}
+.eyebrow b{color:var(--player);font-weight:600}
+.hdr h1{font-size:clamp(28px,4.2vw,46px);font-weight:700;line-height:1.1}
+.hdr h1 em{font-style:normal;color:var(--player)}
+.hdr .sum{max-width:78ch;color:#b9cad3;font-size:15.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 12.5px var(--f-body);padding:4px 10px;border-radius:999px;border:1px solid var(--line);display:inline-flex;gap:8px;align-items:center;background:var(--panel2)}
+.chip .mono{font-size:11.5px;color:var(--sub)}
+.chip.bad{border-color:rgba(255,77,109,.7)} .chip.bad::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--bad)}
+.chip.ok{border-color:rgba(123,224,168,.65)} .chip.ok::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.chip.ref{border-style:dashed}
+
+/* upload */
+.upload{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;background:linear-gradient(180deg,#0d1922,#0a141c);border:1px solid var(--line);border-radius:14px;padding:18px}
+@media (max-width:860px){.upload{grid-template-columns:1fr}}
+.drop{border:1.5px dashed #2a4659;border-radius:12px;padding:22px 18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;justify-content:center;min-height:190px;position:relative;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--player);background:rgba(255,122,89,.06)}
+.drop h3{font-size:20px;font-weight:600}
+.drop p{color:var(--sub);font-size:13.5px}
+.opts{display:flex;flex-direction:column;gap:12px}
+.opt{display:flex;flex-direction:column;gap:6px}
+.tips{color:var(--sub);font-size:13px;display:flex;flex-direction:column;gap:4px;padding-left:0;margin:0;list-style:none}
+.tips li::before{content:"› ";color:var(--player)}
+.privacy{font-size:12.5px;color:var(--ok);display:flex;gap:6px;align-items:center}
+.upbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--sub)}
+.upbar b{color:var(--text);font-weight:500}
+
+/* processing */
+.proc{grid-column:1/-1;display:flex;flex-direction:column;gap:12px}
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.step{font-size:12.5px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--sub);display:flex;gap:8px;align-items:center}
+.step::before{content:"";width:8px;height:8px;border-radius:50%;border:1px solid #37556a;flex:none}
+.step.run{color:var(--text);border-color:var(--player)} .step.run::before{background:var(--player);border-color:var(--player);animation:pulse 1s infinite}
+.step.done{color:#a9c6b6} .step.done::before{background:var(--ok);border-color:var(--ok)}
+@keyframes pulse{50%{opacity:.35}}
+.bar{height:8px;background:#0a141b;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--player),#ffb199);transition:width .2s}
+.procmsg{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px}
+.err{color:var(--bad);font-size:13.5px}
+
+/* picker */
+.picker{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
+.pickwrap{position:relative;max-width:100%;align-self:flex-start;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:crosshair}
+.pickwrap canvas{display:block;max-width:100%;max-height:60vh;width:auto;height:auto}
+.pickrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cand{border:2px solid var(--fix);position:absolute;border-radius:6px;pointer-events:none}
+.cand span{position:absolute;top:-2px;left:-2px;background:var(--fix);color:#04161a;font:700 13px var(--f-mono);padding:0 7px;border-radius:5px 0 6px 0}
+.cand.sel{border-color:var(--player)} .cand.sel span{background:var(--player)}
+
+/* stage */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+@media (max-width:980px){.stage{grid-template-columns:1fr}}
+.v3d{position:relative;height:min(74vh,660px);min-height:420px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 50% 30%,#0d1c27 0%,#081017 70%)}
+@media (max-width:520px){.v3d{height:470px;min-height:0}}
+.v3d canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;z-index:3;font-family:var(--f-mono);font-size:11.5px;background:rgba(8,16,23,.72);border:1px solid rgba(29,50,67,.9);border-radius:9px;padding:8px 10px;backdrop-filter:blur(3px);pointer-events:none}
+.hudL{top:10px;left:10px}
+.hudL table{border-collapse:collapse}
+.hudL th{font-weight:500;color:var(--sub);text-align:right;padding:1px 6px;font-size:10px;letter-spacing:.08em}
+.hudL th:first-child{text-align:left;padding-left:0}
+.hudL td{padding:2px 6px;text-align:right;border-radius:4px}
+.hudL td:first-child{text-align:left;padding-left:0;color:#b8cad4;font-family:var(--f-body);font-size:11.5px}
+.hudL td.p{color:var(--player)} .hudL td.c{color:var(--fix)}
+.hudL td.hot{background:rgba(255,77,109,.2);color:#ffd0d8;box-shadow:0 0 12px rgba(255,77,109,.55)}
+.hudR{top:10px;right:10px;text-align:right;display:flex;flex-direction:column;gap:2px}
+.hudR .ty{font:600 15px var(--f-head);color:var(--text)}
+.hudR .ph{color:var(--warn);letter-spacing:.1em}
+.hudR .tc{color:var(--sub)}
+.legend{bottom:10px;left:10px;display:flex;flex-direction:column;gap:3px;font-family:var(--f-body);font-size:11.5px}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:16px;height:4px;border-radius:2px;display:inline-block}
+.empty3d{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;padding:20px}
+.empty3d div{background:rgba(8,16,23,.78);border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-width:380px;display:flex;flex-direction:column;gap:6px}
+.empty3d b{font:600 16px var(--f-head)}
+.empty3d p{font-size:13px;color:var(--sub)}
+.callouts{position:absolute;inset:0;z-index:4;pointer-events:none}
+.callouts svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.co{position:absolute;background:rgba(8,16,23,.88);border:1px solid var(--ok);border-radius:8px;padding:5px 8px;font-size:11.5px;line-height:1.35;max-width:190px;box-shadow:0 0 14px rgba(0,0,0,.4)}
+.co.bad{border-color:var(--bad);box-shadow:0 0 14px rgba(255,77,109,.3)}
+.co.warn{border-color:var(--warn)}
+.co .t{color:var(--sub);font-size:10.5px;display:block}
+.co .v{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+.co .v .p{color:var(--player)} .co .v .c{color:var(--fix)}
+@media (max-width:520px){.co{font-size:10px;max-width:118px;padding:3px 6px}.co .v{font-size:11px;white-space:normal}.co .t{font-size:9.5px}.hud{font-size:10px;padding:6px 7px}.hudL td:first-child{font-size:10px}.hudR .ty{font-size:13px}}
+.impact{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.impact b{font:700 14px var(--f-head);letter-spacing:.2em;color:#fff;text-shadow:0 0 12px var(--player)}
+.impact .pb{width:160px;height:3px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden}
+.impact .pb i{display:block;height:100%;background:var(--warn);width:100%}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6}
+.flash.go{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (max-width:980px) and (min-width:640px){.side{display:grid;grid-template-columns:1fr 1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ovwrap{position:relative;aspect-ratio:1/1;max-width:100%;border-radius:8px;overflow:hidden;background:#05090d}
+.ovwrap canvas{width:100%;height:100%;display:block}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:12.5px;padding:5px 0;border-top:1px solid rgba(29,50,67,.6)}
+.mrow:first-of-type{border-top:0}
+.mrow .nm{display:flex;align-items:center;gap:7px}
+.mrow .nm::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--sub);flex:none}
+.mrow.ok .nm::before{background:var(--ok)} .mrow.warn .nm::before{background:var(--warn)} .mrow.bad .nm::before{background:var(--bad)}
+.mrow .vv{font-family:var(--f-mono);font-size:12px;text-align:right;white-space:nowrap}
+.mrow .vv .p{color:var(--player)} .mrow .vv .c{color:var(--fix)}
+.mrow .tg{grid-column:1/-1;color:var(--sub);font-size:11px;padding-left:14px}
+.mrow.na{opacity:.45}
+.tag{font:500 10.5px var(--f-mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--sub);letter-spacing:.04em}
+.tag.est{border-color:rgba(255,200,87,.5);color:var(--warn)}
+
+/* controls */
+.controls{display:flex;flex-direction:column;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.shots{display:flex;flex-wrap:wrap;gap:6px}
+.shotbtn{display:inline-flex;align-items:center;gap:6px}
+.shotbtn .dot{width:7px;height:7px;border-radius:50%}
+.shotbtn .n{font-family:var(--f-mono);font-size:11px;color:var(--sub)}
+.tl{position:relative;height:34px}
+.tl .segs{position:absolute;left:0;right:0;top:11px;height:12px;border-radius:6px;overflow:hidden;display:flex}
+.tl .segs div{height:100%;position:relative}
+.tl .segs span{position:absolute;left:4px;top:-1px;font-size:9.5px;color:rgba(255,255,255,.75);white-space:nowrap;letter-spacing:.05em}
+.tl .imp{position:absolute;top:4px;width:2px;height:26px;background:var(--warn);box-shadow:0 0 8px var(--warn);transform:translateX(-1px)}
+.tl .head{position:absolute;top:2px;width:3px;height:30px;background:#fff;border-radius:2px;transform:translateX(-1.5px);box-shadow:0 0 6px #fff}
+.tl input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0}
+.tl input:focus-visible + .head{outline:2px solid var(--fix);outline-offset:3px}
+.crow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.crow .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* problems etc. */
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--bad)}
+.pcard.mid{border-top-color:var(--warn)} .pcard.ref{border-top-color:#52697a}
+.pcard header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pcard h3{font-size:18px;font-weight:600}
+.sev{font:600 11px var(--f-mono);padding:2px 8px;border-radius:5px;background:rgba(255,77,109,.14);color:#ff9fb1;white-space:nowrap}
+.sev.mid{background:rgba(255,200,87,.14);color:var(--warn)} .sev.ref{background:rgba(127,151,166,.15);color:var(--sub)}
+.pcard .data{font-size:13px;color:#b9cad3}
+.pcard .data .mono{color:var(--text)}
+.pcard dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.pcard dt{color:var(--sub);font-size:12px;padding-top:1px}
+.pcard dd{margin:0}
+.chart{width:100%;height:auto;display:block}
+.pcard .act{display:flex;justify-content:flex-end}
+.scard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-left:3px solid var(--ok)}
+.scard h3{font-size:16px;font-weight:600}
+.scard p{font-size:13.5px;color:#b9cad3}
+.scard .mono{font-size:12px;color:var(--ok)}
+.sec{display:flex;flex-direction:column;gap:12px}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table.data{border-collapse:collapse;width:100%;font-size:13px;min-width:860px}
+table.data th{font:500 11px var(--f-body);color:var(--sub);text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel2)}
+table.data th:nth-child(-n+4){text-align:left}
+table.data td{padding:8px 10px;border-bottom:1px solid rgba(29,50,67,.55);text-align:right;font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+table.data td:nth-child(-n+4){text-align:left;font-family:var(--f-body)}
+table.data tbody tr{cursor:pointer}
+table.data tbody tr:hover{background:#12222e}
+table.data tbody tr.cur{background:#10242d}
+table.data td.bad{color:var(--bad);font-weight:600} table.data td.warn{color:var(--warn)} table.data td.na{color:#46606f}
+.qc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.qcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.qcard.ex{opacity:.5}
+.qcard canvas{width:100%;height:auto;border-radius:7px;background:#05090d;display:block}
+.qcard .r{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.qcard select{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font-size:12.5px}
+.qcard label{display:flex;gap:6px;align-items:center;color:var(--sub);cursor:pointer}
+.method{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.method ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:#b9cad3;max-width:100ch}
+.method b{color:var(--text);font-weight:500}
+select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hiddenvid{position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hdr">
+    <div class="eyebrow" id="eyebrow"><b>MOTION LAB · PICKLEBALL</b><span>33 關節點 3D 重建</span><span id="ebMeta">等待影片</span></div>
+    <h1 id="title">把你的匹克球動作，<em>拆成一格一格</em>來看</h1>
+    <p class="sum" id="summary">上傳一段打球影片，網頁會在你的瀏覽器裡逐格找出 33 個關節點、抓出每一拍、量出身體角度，再做一個「矯正版」的你疊在旁邊一起播放。</p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="upload" id="upload" aria-label="上傳影片">
+    <div class="drop" id="drop">
+      <h3>選一支匹克球影片</h3>
+      <p>手機直拍、橫拍都可以。可以直接把影片拖進這個框。建議 10–60 秒、同一位球員連續打好幾拍。</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <label class="btn primary" for="file" tabindex="0" id="fileLbl">選擇影片</label>
+        <input type="file" id="file" accept="video/*" class="vh">
+        <span class="mono" style="font-size:12px;color:var(--sub)" id="fileName"></span>
+      </div>
+      <p class="privacy">● 影片只在你的瀏覽器裡處理，不會上傳到任何伺服器。</p>
+      <p class="mono" style="font-size:11.5px;color:var(--sub)">偵測引擎：<span id="engineStatus">待命（選影片時自動載入）</span></p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <span class="lbl">慣用手</span>
+        <div class="seg" role="group" aria-label="慣用手">
+          <button class="btn" data-hand="auto" aria-pressed="true">從影片判斷</button>
+          <button class="btn" data-hand="R" aria-pressed="false">右手</button>
+          <button class="btn" data-hand="L" aria-pressed="false">左手</button>
+        </div>
+      </div>
+      <div class="opt">
+        <span class="lbl">偵測模型</span>
+        <div class="seg" role="group" aria-label="偵測模型">
+          <button class="btn" data-model="heavy" aria-pressed="true">精準（heavy，約 31 MB）</button>
+          <button class="btn" data-model="full" aria-pressed="false">快速（full，約 9 MB）</button>
+        </div>
+      </div>
+      <div class="opt">
+        <span class="lbl">拍攝建議</span>
+        <ul class="tips">
+          <li>從側後方約 45° 拍，手機橫放，離球員 5–8 公尺讓全身入鏡</li>
+          <li>可以的話用 60fps，小球動作很快</li>
+          <li>雙打時讓要分析的人站在畫面中間、不被隊友擋到</li>
+        </ul>
+      </div>
+    </div>
+    <div class="proc" id="proc" hidden>
+      <div class="steps" id="steps"></div>
+      <div class="bar"><i id="barI"></i></div>
+      <div class="procmsg"><span id="procMsg">準備中…</span><span class="mono" id="procEta"></span></div>
+      <div><button class="btn" id="cancelBtn">取消</button></div>
+    </div>
+    <div class="picker" id="picker" hidden>
+      <div><b style="font-family:var(--f-head);font-size:17px">要分析哪一位？</b>
+        <p style="color:var(--sub);font-size:13.5px">框起來的是偵測到的人。點框或直接點在球員身上都可以；如果這一格被擋住，換一個時間點。</p></div>
+      <div class="pickwrap" id="pickWrap"><canvas id="pickCv"></canvas></div>
+      <div class="pickrow" id="pickTimes"></div>
+      <div class="pickrow"><button class="btn primary" id="pickGo" disabled>分析這位球員</button><span id="pickMsg" style="font-size:13px;color:var(--sub)"></span></div>
+    </div>
+  </section>
+
+  <div class="upbar" id="upbar" hidden>
+    <span>影片：<b id="ubName"></b></span><span id="ubInfo" class="mono"></span>
+    <button class="btn" id="newVid">換一支影片</button>
+  </div>
+
+  <main class="sec" id="lab">
+    <div class="stage">
+      <div class="v3d" id="v3d">
+        <canvas class="gl" id="gl" aria-label="3D 動作重建"></canvas>
+        <div class="hud hudL" id="hudL" hidden></div>
+        <div class="hud hudR" id="hudR" hidden><span class="ty" id="hudType"></span><span class="ph" id="hudPhase"></span><span class="tc" id="hudTc"></span></div>
+        <div class="hud legend" id="legend">
+          <span><i style="background:var(--player)"></i>球員動作</span>
+          <span><i style="background:var(--fix)"></i>矯正版</span>
+          <span><i style="background:var(--bad)"></i>出問題的部位</span>
+          <span><i style="background:var(--kitchen);opacity:.7"></i>廚房區（非截擊區）</span>
+        </div>
+        <div class="callouts" id="callouts"><svg id="coSvg"></svg></div>
+        <div class="impact" id="impact" hidden><b>IMPACT · 擊球瞬間</b><div class="pb"><i id="impactBar"></i></div></div>
+        <div class="flash" id="flash"></div>
+        <div class="empty3d" id="empty3d"><div><b>3D 動作捕捉實驗室</b><p>上傳影片後，這裡會出現你的半透明人形（珊瑚橘）和矯正版（青色）疊在一起播放，旁邊是原始影片疊骨架。可以用滑鼠或手指旋轉視角。</p></div></div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <h3>原始影片疊骨架 <span class="tag" id="ovTag">—</span></h3>
+          <div class="ovwrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片疊上骨架"></canvas></div>
+        </div>
+        <div class="card" id="shotCard">
+          <h3>這一拍的體檢 <span class="tag" id="scTag">—</span></h3>
+          <div id="scBody" style="font-size:13px;color:var(--sub)">分析完成後，選一拍就會列出這一拍的各項數據：<span style="color:var(--player)">球員</span> → <span style="color:var(--fix)">矯正版</span>。</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="controls" id="controls" hidden>
+      <div class="shots" id="shots" role="group" aria-label="選一拍"></div>
+      <div class="tl" id="tl">
+        <div class="segs" id="tlSegs"></div>
+        <div class="imp" id="tlImp"></div>
+        <input type="range" id="scrub" min="0" max="100" step="1" value="0" aria-label="時間軸（格）">
+        <div class="head" id="tlHead"></div>
+      </div>
+      <div class="crow">
+        <button class="btn" id="playBtn" aria-pressed="false">▶ 播放</button>
+        <div class="grp"><span class="lbl">速度</span><div class="seg" id="speedSeg">
+          <button class="btn" data-speed="0.25">0.25×</button><button class="btn" data-speed="0.5" aria-pressed="true">0.5×</button><button class="btn" data-speed="1">1×</button></div></div>
+        <div class="grp"><span class="lbl">顯示</span><div class="seg" id="modeSeg">
+          <button class="btn" data-mode="overlay" aria-pressed="true">疊在一起</button><button class="btn" data-mode="side">左右並排</button><button class="btn" data-mode="player">只看球員</button><button class="btn" data-mode="fix">只看矯正</button></div></div>
+        <button class="btn" id="freezeBtn" aria-pressed="true">擊球定格：開</button>
+        <div class="grp"><span class="lbl">視角</span><div class="seg" id="viewSeg">
+          <button class="btn" data-view="cam" aria-pressed="true">原始鏡頭</button><button class="btn" data-view="front">正前方</button><button class="btn" data-view="side">側面</button><button class="btn" data-view="top">俯視</button></div></div>
+      </div>
+    </div>
+  </main>
+
+  <section class="sec" id="secProblems" hidden>
+    <h2>主要問題 <small>至少 2 拍都出現才列入</small></h2>
+    <div class="grid2" id="problems"></div>
+    <div id="minor"></div>
+  </section>
+  <section class="sec" id="secGood" hidden>
+    <h2>已經做對的 <small>保持下去</small></h2>
+    <div class="grid3" id="goods"></div>
+  </section>
+  <section class="sec" id="secTable" hidden>
+    <h2>逐拍數據 <small>紅字＝超標　黃字＝接近邊界　點一列跳到那一拍</small></h2>
+    <div class="filters" id="filters"></div>
+    <div class="tblwrap"><table class="data" id="tbl"></table></div>
+  </section>
+  <section class="sec" id="secQC" hidden>
+    <h2>擊球確認與品質檢查 <small>每拍取擊球前、擊球、擊球後三格</small></h2>
+    <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是黃色）、是不是真的有擊球，球種判斷錯了可以直接改，改完所有數據會重新計算。</p>
+    <div class="crow"><span class="lbl">慣用手</span><select class="inp" id="handSel" aria-label="慣用手"></select></div>
+    <div class="qc" id="qc"></div>
+  </section>
+  <section class="sec" id="secMethod" hidden>
+    <h2>方法說明 <small>數字怎麼來的、誤差多少</small></h2>
+    <div class="method"><ul id="method"></ul></div>
+  </section>
+</div>
+
+<video id="vP" class="hiddenvid" muted playsinline preload="auto"></video>
+<video id="vA" class="hiddenvid" muted playsinline preload="auto"></video>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="vendor/mediapipe/wasm/vision_wasm_internal.js"></script>
+<script>window.__MPFactory = window.ModuleFactory;</script>
+<script src="vendor/mediapipe/vision_bundle.js"></script>
+<script src="js/pose.js"></script>
+<script src="js/analyze.js"></script>
+<script src="js/lab.js"></script>

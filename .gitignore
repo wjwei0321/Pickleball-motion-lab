@@ -1,0 +1,4 @@
+_test/
+node_modules/
+.vercel/
+__pycache__/
