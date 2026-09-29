@@ -297,7 +297,23 @@
   document.querySelectorAll('[data-hand]').forEach((b) => b.addEventListener('click', () => { st.hand = b.dataset.hand; setSegPressed(b.parentElement, 'hand', st.hand); }));
   document.querySelectorAll('[data-model]').forEach((b) => b.addEventListener('click', () => { st.model = b.dataset.model; setSegPressed(b.parentElement, 'model', st.model); }));
   $('fileLbl').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
-  $('file').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) startFile(f); });
+  // iPhone 選完影片後會先轉檔／從 iCloud 下載，這段時間網頁收不到任何事件 → 一按「選擇影片」就顯示等待狀態
+  let waitTimer = null, waitT0 = 0;
+  function showPickWait() {
+    waitT0 = performance.now(); $('pickWaitT').textContent = '';
+    $('pickWait').hidden = false;
+    clearInterval(waitTimer);
+    waitTimer = setInterval(() => {
+      const sec = Math.round((performance.now() - waitT0) / 1000);
+      if (sec >= 2) $('pickWaitT').textContent = `${sec} 秒`;
+      if (sec > 240) hidePickWait(); // 四分鐘都沒拿到檔案，多半是取消了
+    }, 1000);
+  }
+  function hidePickWait() { clearInterval(waitTimer); waitTimer = null; $('pickWait').hidden = true; }
+  $('file').addEventListener('click', showPickWait);
+  $('file').addEventListener('cancel', hidePickWait); // Safari 16.4+、Chrome 113+ 取消選擇時會觸發
+  $('pickWaitX').addEventListener('click', hidePickWait); // 舊瀏覽器沒有 cancel 事件，讓使用者自己收起
+  $('file').addEventListener('change', (e) => { hidePickWait(); const f = e.target.files[0]; e.target.value = ''; if (f) startFile(f); });
   const drop = $('drop');
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));

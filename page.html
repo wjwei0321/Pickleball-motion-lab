@@ -86,6 +86,10 @@ button,select,input{font:inherit;color:inherit}
 .opts{display:flex;flex-direction:column;gap:12px}
 .opt{display:flex;flex-direction:column;gap:6px}
 .tips{color:var(--sub);font-size:13px;display:flex;flex-direction:column;gap:4px;padding-left:0;margin:0;list-style:none}
+.pwait{display:flex;gap:12px;align-items:flex-start;background:rgba(255,210,63,.07);border:1px solid rgba(255,210,63,.45);border-radius:10px;padding:10px 12px}
+.pwait svg{width:26px;height:26px;flex:none;color:var(--player);animation:ptrspin .9s linear infinite}
+.pwait b{font-weight:600;font-size:14.5px}
+.pwait p{font-size:13px;color:#b9cad3;margin-top:2px}
 .tips li::before{content:"› ";color:var(--player)}
 .upbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--sub)}
 .upbar b{color:var(--text);font-weight:500}
@@ -288,6 +292,12 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <label class="btn primary" for="file" tabindex="0" id="fileLbl">選擇影片</label>
         <input type="file" id="file" accept="video/*" class="vh">
         <span class="mono" style="font-size:12px;color:var(--sub)" id="fileName"></span>
+      </div>
+      <div class="pwait" id="pickWait" role="status" aria-live="polite" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+        <div><b>正在等手機準備影片… <span class="mono" id="pickWaitT"></span></b>
+        <p>選好影片後，手機會先轉檔或從 iCloud 下載，較長的影片可能要 10 秒到 1 分鐘，這段時間畫面不會動是正常的，請停在這一頁。準備好會自動開始分析。</p>
+        <button class="btn" id="pickWaitX" style="margin-top:6px;padding:3px 10px;font-size:12px">我沒有選影片，取消等待</button></div>
       </div>
       <div class="opt" style="margin-top:4px">
         <span class="lbl">拍攝建議</span>
