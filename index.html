@@ -32,13 +32,17 @@ p{margin:0}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--fix);outline-offset:2px;border-radius:6px}
 .btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;line-height:1.4;transition:border-color .15s,background .15s;white-space:nowrap}
-.btn:hover{border-color:#2d4c63}
-.btn[aria-pressed="true"],.btn.on{border-color:var(--fix);background:#0f2a33;color:#e9fbfd}
+.btn:hover{border-color:#3b5d75;color:var(--text)}
+.btn[aria-pressed="false"]{background:transparent;color:#9fb3c0}
+.btn[aria-pressed="false"]:hover{background:#12222e;color:var(--text)}
+.btn[aria-pressed="true"],.btn.on{border-color:var(--player);background:var(--player);color:#1a1403;font-weight:700;box-shadow:0 0 0 1px var(--player),0 0 14px rgba(255,210,63,.28)}
+.seg .btn[aria-pressed="true"]::before{content:"✓ ";font-weight:700}
+.shotbtn[aria-pressed="true"] .n{color:#4a3d05}
+.shotbtn .dot{box-shadow:0 0 0 1.5px rgba(8,16,23,.85)}
 .btn.primary{background:var(--player);border-color:var(--player);color:#1a1403;font-weight:700}
 .btn.primary:hover{background:#FFE07A}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
-.seg .btn{border:0;border-radius:0;border-right:1px solid var(--line)}
-.seg .btn:last-child{border-right:0}
+.seg{display:inline-flex;border:1px solid #2a4457;border-radius:9px;overflow:hidden;flex-wrap:wrap;background:#0a141c;padding:2px;gap:2px}
+.seg .btn{border:0;border-radius:7px}
 .lbl{font:500 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--sub)}
 
 /* header */
@@ -167,8 +171,10 @@ button,select,input{font:inherit;color:inherit}
 .tl .head{position:absolute;top:2px;width:3px;height:30px;background:#fff;border-radius:2px;transform:translateX(-1.5px);box-shadow:0 0 6px #fff}
 .tl input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0}
 .tl input:focus-visible + .head{outline:2px solid var(--fix);outline-offset:3px}
-.crow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
-.crow .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.crow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.crow .grp{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crow .lbl{color:#b8cad4;font-size:11px}
+#playBtn{min-width:92px;font-weight:700}
 
 /* problems etc. */
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -287,6 +293,25 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
   </div>
 
   <main class="sec" id="lab">
+    <div class="controls" id="controls" hidden>
+      <div class="shots" id="shots" role="group" aria-label="選一拍"></div>
+      <div class="tl" id="tl">
+        <div class="segs" id="tlSegs"></div>
+        <div class="imp" id="tlImp"></div>
+        <input type="range" id="scrub" min="0" max="100" step="1" value="0" aria-label="時間軸（格）">
+        <div class="head" id="tlHead"></div>
+      </div>
+      <div class="crow">
+        <button class="btn" id="playBtn" aria-pressed="false">▶ 播放</button>
+        <div class="grp"><span class="lbl">速度</span><div class="seg" id="speedSeg">
+          <button class="btn" data-speed="0.25" aria-pressed="false">0.25×</button><button class="btn" data-speed="0.5" aria-pressed="true">0.5×</button><button class="btn" data-speed="1" aria-pressed="false">1×</button></div></div>
+        <div class="grp"><span class="lbl">顯示</span><div class="seg" id="modeSeg">
+          <button class="btn" data-mode="overlay" aria-pressed="true">疊在一起</button><button class="btn" data-mode="side" aria-pressed="false">左右並排</button><button class="btn" data-mode="player" aria-pressed="false">只看球員</button><button class="btn" data-mode="fix" aria-pressed="false">只看矯正</button></div></div>
+        <button class="btn" id="freezeBtn" aria-pressed="true">擊球定格：開</button>
+        <div class="grp"><span class="lbl">視角</span><div class="seg" id="viewSeg">
+          <button class="btn" data-view="cam" aria-pressed="true">原始鏡頭</button><button class="btn" data-view="front" aria-pressed="false">正前方</button><button class="btn" data-view="side" aria-pressed="false">側面</button><button class="btn" data-view="top" aria-pressed="false">俯視</button></div></div>
+      </div>
+    </div>
     <div class="stage">
       <div class="v3d" id="v3d">
         <canvas class="gl" id="gl" aria-label="3D 動作重建"></canvas>
@@ -315,25 +340,6 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
       </aside>
     </div>
 
-    <div class="controls" id="controls" hidden>
-      <div class="shots" id="shots" role="group" aria-label="選一拍"></div>
-      <div class="tl" id="tl">
-        <div class="segs" id="tlSegs"></div>
-        <div class="imp" id="tlImp"></div>
-        <input type="range" id="scrub" min="0" max="100" step="1" value="0" aria-label="時間軸（格）">
-        <div class="head" id="tlHead"></div>
-      </div>
-      <div class="crow">
-        <button class="btn" id="playBtn" aria-pressed="false">▶ 播放</button>
-        <div class="grp"><span class="lbl">速度</span><div class="seg" id="speedSeg">
-          <button class="btn" data-speed="0.25">0.25×</button><button class="btn" data-speed="0.5" aria-pressed="true">0.5×</button><button class="btn" data-speed="1">1×</button></div></div>
-        <div class="grp"><span class="lbl">顯示</span><div class="seg" id="modeSeg">
-          <button class="btn" data-mode="overlay" aria-pressed="true">疊在一起</button><button class="btn" data-mode="side">左右並排</button><button class="btn" data-mode="player">只看球員</button><button class="btn" data-mode="fix">只看矯正</button></div></div>
-        <button class="btn" id="freezeBtn" aria-pressed="true">擊球定格：開</button>
-        <div class="grp"><span class="lbl">視角</span><div class="seg" id="viewSeg">
-          <button class="btn" data-view="cam" aria-pressed="true">原始鏡頭</button><button class="btn" data-view="front">正前方</button><button class="btn" data-view="side">側面</button><button class="btn" data-view="top">俯視</button></div></div>
-      </div>
-    </div>
   </main>
 
   <section class="sec" id="secProblems" hidden>
