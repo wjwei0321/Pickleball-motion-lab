@@ -1086,45 +1086,56 @@
   // ================= 手機下拉強制更新 =================
   // 在頁面最上方往下拉：出現旋轉圖示，拉過門檻放開就從伺服器重新載入（網址加時間戳避開快取）
   (function pullToRefresh() {
-    // 手指先拉過 DEAD（px）才出現圖示；再拉到 d ≥ TH 才算要更新（總共約 DEAD + TH×2 ≈ 250 px），避免誤觸
-    const DEAD = 90, TH = 80, MAX = 120;
+    // 在頁面最上方直接往下拉：整個版面跟著手指往下移，上方出現旋轉圖示；
+    // 手指拉超過 TRIGGER（px）放開才更新，沒拉到就彈回去。
+    const TRIGGER = 240, MAXSHIFT = 130;
+    const sc = $('scroller'), wrap = sc.querySelector('.wrap');
     const el = document.createElement('div');
     el.className = 'ptr'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
     el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span class="ptr-t">下拉更新</span>';
     document.body.appendChild(el);
     const svg = el.querySelector('svg'), txt = el.querySelector('.ptr-t');
-    let y0 = null, d = 0, pulling = false, busy = false;
-    const place = (px) => { el.style.transform = `translate(-50%, ${px - 70}px)`; };
-    const reset = () => { pulling = false; y0 = null; d = 0; el.classList.add('back'); el.classList.remove('show', 'ready'); place(0); };
+    const atTop = () => Math.max(sc.scrollTop, window.scrollY) <= 0;
+    let y0 = null, dy = 0, pulling = false, busy = false;
+    // 阻尼：越拉越重，版面最多往下移 MAXSHIFT
+    const shiftOf = (v) => MAXSHIFT * (1 - Math.exp(-v / 260));
+    const show = (shift, ready) => {
+      wrap.style.transform = shift ? `translateY(${shift}px)` : '';
+      el.style.transform = `translate(-50%, ${Math.max(-70, shift / 2 - 22)}px)`;
+      el.classList.toggle('show', shift > 8); el.classList.toggle('ready', ready);
+    };
+    const snapBack = () => {
+      pulling = false; y0 = null; dy = 0;
+      wrap.classList.add('snap'); el.classList.add('back'); show(0, false);
+      setTimeout(() => { wrap.classList.remove('snap'); el.classList.remove('back'); }, 320);
+    };
     window.addEventListener('touchstart', (e) => {
-      if (busy || window.scrollY > 0 || e.touches.length !== 1 || e.target.closest('canvas, .v3d, .ovwrap, input, select, textarea, .tblwrap')) { y0 = null; return; }
-      y0 = e.touches[0].clientY; d = 0; el.classList.remove('back');
+      if (busy || !atTop() || e.touches.length !== 1 || e.target.closest('canvas, .v3d, .ovwrap, input, select, textarea, .tblwrap')) { y0 = null; return; }
+      y0 = e.touches[0].clientY; dy = 0; wrap.classList.remove('snap'); el.classList.remove('back');
     }, { passive: true });
     window.addEventListener('touchmove', (e) => {
       if (y0 == null || busy) return;
-      const dy = e.touches[0].clientY - y0;
-      if (dy <= 0 || window.scrollY > 0) { if (pulling) reset(); return; }
+      dy = e.touches[0].clientY - y0;
+      if (dy <= 0 || !atTop()) { if (pulling) snapBack(); y0 = dy <= 0 ? e.touches[0].clientY : null; return; }
       if (e.cancelable) e.preventDefault();
-      if (dy < DEAD) { if (pulling) { el.classList.remove('show', 'ready'); place(0); d = 0; } return; }
       pulling = true;
-      d = Math.min(MAX, (dy - DEAD) * 0.5);
-      el.classList.add('show'); el.classList.toggle('ready', d >= TH);
-      place(Math.min(d, TH + 10) + 10);
-      svg.style.transform = `rotate(${d * 4}deg)`;
-      txt.textContent = d >= TH ? (st.res ? '放開更新（目前的分析會清除）' : '放開更新') : '下拉更新';
+      const ready = dy >= TRIGGER, shift = shiftOf(dy);
+      show(shift, ready);
+      svg.style.transform = `rotate(${dy * 1.6}deg)`;
+      txt.textContent = ready ? (st.res ? '放開更新（目前的分析會清除）' : '放開更新') : '繼續往下拉更新';
     }, { passive: false });
     window.addEventListener('touchend', () => {
       if (!pulling) { y0 = null; return; }
-      if (d >= TH) {
+      if (dy >= TRIGGER) {
         busy = true; svg.style.transform = ''; el.classList.add('spin'); el.classList.remove('ready'); txt.textContent = '更新中…';
+        wrap.classList.add('snap'); show(60, false); el.classList.add('show');
         const u = new URL(location.href); u.searchParams.set('r', Date.now());
         setTimeout(() => location.replace(u.href), 350);
-      } else reset();
+      } else snapBack();
     });
-    window.addEventListener('touchcancel', () => { if (pulling && !busy) reset(); });
-    // 從瀏覽器的返回快取（bfcache）還原時，舊頁面的「更新中」狀態會留著，導致下拉失效 → 還原時一律重設
-    const clear = () => { busy = false; el.classList.remove('spin', 'show', 'ready'); svg.style.transform = ''; txt.textContent = '下拉更新'; reset(); };
-    window.addEventListener('pageshow', (e) => { if (e.persisted) clear(); });
+    window.addEventListener('touchcancel', () => { if (pulling && !busy) snapBack(); });
+    // 從瀏覽器的返回快取（bfcache）還原時重設狀態
+    window.addEventListener('pageshow', (e) => { if (e.persisted) { busy = false; el.classList.remove('spin'); svg.style.transform = ''; txt.textContent = '下拉更新'; snapBack(); } });
     // 更新完把網址上的 ?r= 拿掉，讓更新後的頁面跟第一次打開完全一樣
     try {
       const u = new URL(location.href);

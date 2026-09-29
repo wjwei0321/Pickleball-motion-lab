@@ -22,6 +22,12 @@
 [hidden]{display:none!important}
 html,body{background:var(--bg)}
 html,body{overscroll-behavior-y:contain}
+/* 觸控裝置：頁面改在 #scroller 裡捲動，瀏覽器自己的下拉更新（只作用在整個視窗）就不會觸發 */
+@media (pointer:coarse){
+  html,body{height:100%;overflow:hidden}
+  #scroller{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+}
+.wrap.snap{transition:transform .3s ease}
 .ptr{position:fixed;left:50%;top:0;z-index:50;transform:translate(-50%,-70px);display:flex;align-items:center;gap:8px;background:#0E1A24;border:1px solid #2a4457;border-radius:999px;padding:7px 14px 7px 8px;box-shadow:0 6px 20px rgba(0,0,0,.45);pointer-events:none;opacity:0;font-size:13px;color:var(--text);white-space:nowrap}
 .ptr.show{opacity:1}
 .ptr.back{transition:transform .25s ease,opacity .25s ease}
@@ -266,7 +272,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
-<div class="wrap">
+<div id="scroller"><div class="wrap">
   <header class="hdr">
     <div class="eyebrow" id="eyebrow"><b>MOTION ANALYSIS · PICKLEBALL</b></div>
     <h1 id="title">邁向匹克球<em>神之路</em></h1>
@@ -410,7 +416,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     <h2>方法說明 <small>數字怎麼來的、誤差多少</small></h2>
     <div class="method"><ul id="method"></ul></div>
   </section>
-</div>
+</div></div>
 
 <video id="vP" class="hiddenvid" muted playsinline preload="auto"></video>
 <video id="vA" class="hiddenvid" muted playsinline preload="auto"></video>
