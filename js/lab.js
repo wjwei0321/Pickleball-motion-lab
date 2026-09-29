@@ -344,7 +344,7 @@
   async function startFile(file) {
     st.cancel = false; st.file = file;
     $('fileName').textContent = file.name;
-    $('proc').hidden = false; $('picker').hidden = true;
+    $('proc').hidden = false; $('picker').hidden = true; $('procLine').hidden = $('cancelRow').hidden = false;
     $('procEta').textContent = '';
     stepUI(0, '讀取影片…', 0.02);
     try {
@@ -364,6 +364,7 @@
   window.addEventListener('unhandledrejection', (e) => { if (!$('proc').hidden && $('picker').hidden) fail(e.reason || e); });
   window.addEventListener('error', (e) => { if (!$('proc').hidden && $('picker').hidden && e.message) fail(new Error(e.message)); });
   function fail(e) {
+    $('procLine').hidden = $('cancelRow').hidden = false;
     console.error(e);
     $('procMsg').innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
     $('procEta').textContent = '';
@@ -395,6 +396,7 @@
     $('pickTimes').querySelectorAll('[data-pt]').forEach((b) => b.addEventListener('click', () => showPicker(parseFloat(b.dataset.pt)).catch(fail)));
     $('pickGo').disabled = true;
     stepUI(2, '請選擇要分析的球員', 0.18);
+    $('procLine').hidden = $('cancelRow').hidden = true; // 選人時不需要狀態列和取消鍵
     $('picker').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'nearest' });
   }
   $('pickWrap').addEventListener('click', (e) => {
@@ -412,6 +414,7 @@
   async function runTracking() {
     const P = window.PBPose;
     $('picker').hidden = true;
+    $('procLine').hidden = $('cancelRow').hidden = false;
     stepUI(3, '逐格姿勢偵測中…', 0.2);
     const raw = await P.track(vA, st.seed, st.pickT, (d, n, eta) => {
       stepUI(3, `逐格姿勢偵測 ${d} / ${n} 格`, 0.2 + 0.7 * d / n);
