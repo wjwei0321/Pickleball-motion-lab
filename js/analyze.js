@@ -349,16 +349,17 @@
       fix: '兩腳打開比肩膀寬一點、腳尖微微朝前，重心放在腳掌前半。',
       drill: '左右滑步 3 組 × 20 秒，停下時兩腳一定要比肩寬。' },
   ];
+  // [標題, 每一拍都做到時的說明, 大部分做到時的說明]
   const STRENGTHS = {
-    lean: ['上身保持挺直', '擊球時上半身前傾都在目標內，看球穩、拍面好控制。'],
-    knee: ['膝蓋有彎、姿勢夠低', '擊球前膝蓋角度都落在建議範圍，是用腿在降低高度。'],
-    front: ['擊球點在身體前方', '每一拍都在身前碰到球，拍面角度比較好控制。'],
-    backswing: ['引拍精簡', '引拍幅度都在範圍內，動作小、來得及。'],
-    turn: ['抽球有轉肩', '抽球前肩膀有轉開，有用到身體的力量。'],
-    ready: ['兩拍之間拍子維持在胸前', '準備時拍子一直在胸口附近，下一球反應得快。'],
-    offhand: ['非持拍手留在身前', '另一隻手有留在身前幫忙平衡。'],
-    follow: ['收拍乾淨', '收拍方向和高度都控制得很好。'],
-    stance: ['站距夠寬、下盤穩', '擊球時兩腳都比肩膀寬，重心穩。'],
+    lean: ['上身保持挺直', '擊球時上半身前傾都在目標內，看球穩、拍面好控制。', '大部分擊球時上半身都保持挺直，看球穩、拍面好控制。'],
+    knee: ['膝蓋有彎、姿勢夠低', '擊球前膝蓋角度都落在建議範圍，是用腿在降低高度。', '大部分擊球前膝蓋角度落在建議範圍，有用腿降低高度。'],
+    front: ['擊球點在身體前方', '每一拍都在身前碰到球，拍面角度比較好控制。', '大部分的球都在身前碰到，拍面角度比較好控制。'],
+    backswing: ['引拍精簡', '引拍幅度都在範圍內，動作小、來得及。', '大部分的球引拍幅度在範圍內，動作小、來得及。'],
+    turn: ['抽球有轉肩', '抽球前肩膀有轉開，有用到身體的力量。', '大部分抽球前肩膀有轉開，有用到身體的力量。'],
+    ready: ['兩拍之間拍子維持在胸前', '準備時拍子一直在胸口附近，下一球反應得快。', '大部分時候準備時拍子在胸口附近，下一球反應得快。'],
+    offhand: ['非持拍手留在身前', '另一隻手有留在身前幫忙平衡。', '大部分的球另一隻手有留在身前幫忙平衡。'],
+    follow: ['收拍乾淨', '收拍方向和高度都控制得很好。', '大部分的球收拍方向和高度都控制得不錯。'],
+    stance: ['站距夠寬、下盤穩', '擊球時兩腳都比肩膀寬，重心穩。', '大部分擊球時兩腳比肩膀寬，重心穩。'],
   };
 
   function diagnose(shots) {
@@ -394,7 +395,7 @@
       if (appl.length < 2) continue;
       const ok = appl.filter((s) => s.st[k] === 'ok');
       if (ok.length === appl.length) strengths.push({ metric: k, title: STRENGTHS[k][0], text: STRENGTHS[k][1], count: ok.length, of: appl.length, all: true });
-      else if (appl.length >= 3 && ok.length / appl.length >= 0.7) strengths.push({ metric: k, title: STRENGTHS[k][0], text: STRENGTHS[k][1].replace('每一拍', '大部分的球').replace('都', '大多'), count: ok.length, of: appl.length, all: false });
+      else if (appl.length >= 3 && ok.length / appl.length >= 0.7) strengths.push({ metric: k, title: STRENGTHS[k][0], text: STRENGTHS[k][2], count: ok.length, of: appl.length, all: false });
     }
     strengths.sort((a, b) => (b.all - a.all) || (b.count / b.of - a.count / a.of) || (b.count - a.count));
 
