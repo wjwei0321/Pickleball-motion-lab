@@ -294,8 +294,18 @@
     $('barI').style.width = `${Math.round((frac ?? 0) * 100)}%`;
   }
   function setSegPressed(seg, attr, val) { seg.querySelectorAll('.btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset[attr] === val))); }
-  document.querySelectorAll('[data-hand]').forEach((b) => b.addEventListener('click', () => { st.hand = b.dataset.hand; setSegPressed(b.parentElement, 'hand', st.hand); }));
-  document.querySelectorAll('[data-model]').forEach((b) => b.addEventListener('click', () => { st.model = b.dataset.model; setSegPressed(b.parentElement, 'model', st.model); }));
+  // 分析進行中鎖住設定與選影片，避免中途切換造成錯誤
+  function setBusy(on) {
+    st.busy = on;
+    document.querySelectorAll('[data-hand], [data-model]').forEach((b) => { b.disabled = on; });
+    $('file').disabled = on;
+    $('fileLbl').setAttribute('aria-disabled', String(on)); $('fileLbl').tabIndex = on ? -1 : 0;
+    $('fileLbl').style.pointerEvents = on ? 'none' : '';
+    $('drop').classList.toggle('locked', on);
+    $('lockMsg').hidden = !on;
+  }
+  document.querySelectorAll('[data-hand]').forEach((b) => b.addEventListener('click', () => { if (st.busy) return; st.hand = b.dataset.hand; setSegPressed(b.parentElement, 'hand', st.hand); }));
+  document.querySelectorAll('[data-model]').forEach((b) => b.addEventListener('click', () => { if (st.busy) return; st.model = b.dataset.model; setSegPressed(b.parentElement, 'model', st.model); }));
   $('fileLbl').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
   // iPhone 選完影片後會先轉檔／從 iCloud 下載，這段時間網頁收不到任何事件 → 一按「選擇影片」就顯示等待狀態
   let waitTimer = null, waitT0 = 0;
@@ -317,7 +327,7 @@
   const drop = $('drop');
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', (e) => { const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('video/') || /\.(mov|mp4|m4v|webm)$/i.test(x.name)); if (f) startFile(f); });
+  drop.addEventListener('drop', (e) => { if (st.busy) return; const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('video/') || /\.(mov|mp4|m4v|webm)$/i.test(x.name)); if (f) startFile(f); });
   // 游標移進上傳區就先載入偵測引擎，選好影片時通常已經就緒
   function warmEngine() {
     const kind = st.model;
@@ -358,6 +368,8 @@
   }
 
   async function startFile(file) {
+    if (st.busy) return;
+    setBusy(true);
     st.cancel = false; st.file = file;
     $('fileName').textContent = file.name;
     $('proc').hidden = false; $('picker').hidden = true; $('procLine').hidden = $('cancelRow').hidden = false;
@@ -380,6 +392,7 @@
   window.addEventListener('unhandledrejection', (e) => { if (!$('proc').hidden && $('picker').hidden) fail(e.reason || e); });
   window.addEventListener('error', (e) => { if (!$('proc').hidden && $('picker').hidden && e.message) fail(new Error(e.message)); });
   function fail(e) {
+    setBusy(false);
     $('procLine').hidden = $('cancelRow').hidden = false;
     console.error(e);
     $('procMsg').innerHTML = `<span class="err">${esc(e.message || e)}</span>`;
@@ -453,6 +466,7 @@
     res.overlay = overlayTrack(raw);
     st.res = res;
     if (first) {
+      setBusy(false);
       stepUI(9, '建置實驗室…', 1);
       $('upload').hidden = true; $('upbar').hidden = false;
       $('ubName').textContent = raw.name;

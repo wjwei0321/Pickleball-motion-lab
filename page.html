@@ -90,6 +90,10 @@ button,select,input{font:inherit;color:inherit}
 .pwait svg{width:26px;height:26px;flex:none;color:var(--player);animation:ptrspin .9s linear infinite}
 .pwait b{font-weight:600;font-size:14.5px}
 .pwait p{font-size:13px;color:#b9cad3;margin-top:2px}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.38;cursor:not-allowed;box-shadow:none}
+.btn:disabled:hover{border-color:var(--line)}
+.lockmsg{font-size:13px;color:var(--warn);background:rgba(255,159,67,.08);border:1px solid rgba(255,159,67,.4);border-radius:8px;padding:6px 10px}
+.drop.locked{opacity:.6}
 .tips li::before{content:"› ";color:var(--player)}
 .upbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--sub)}
 .upbar b{color:var(--text);font-weight:500}
@@ -310,6 +314,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
       <span id="engineStatus" hidden>待命</span>
     </div>
     <div class="opts">
+      <p class="lockmsg" id="lockMsg" hidden>分析進行中，完成或取消後才能更改設定。</p>
       <div class="opt">
         <span class="lbl">慣用手</span>
         <div class="seg" role="group" aria-label="慣用手">
