@@ -26,7 +26,7 @@ git log --oneline -3
 - 確認追蹤的檔案大約是這些（總共約 48 MB，單檔最大約 10 MB，在 GitHub 100 MB 限制內）：
 
 ```
-.gitignore  CLAUDE.md  DEPLOY.md  README.md  build.py  index.html  page.html  vercel.json
+.gitattributes  .gitignore  CLAUDE.md  DEPLOY.md  README.md  build.py  index.html  page.html  vercel.json
 js/analyze.js  js/lab.js  js/pose.js
 models/full.part0.wasm  models/heavy.part0.wasm  models/heavy.part1.wasm  models/heavy.part2.wasm
 vendor/mediapipe/vision_bundle.js  vendor/mediapipe/wasm/vision_wasm_internal.js  vendor/mediapipe/wasm/vision_wasm_internal.wasm
