@@ -314,12 +314,15 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
   .legend{display:none}
   .zoombar .btn{padding:2px 7px}.ovhint{display:none}
 }
+/* 還沒分析時：只有標題和上傳區，剛好填滿一個螢幕，下面不會露出半張空的 3D 卡片 */
+.wrap.landing{min-height:100vh;min-height:100svh;padding-block-end:16px}
+.wrap.landing #lab{display:none}
+.wrap.landing .upload{flex:1 0 auto}
+@media (max-width:860px){.wrap.landing .upload{grid-template-rows:1fr auto}.wrap.landing .drop{align-self:stretch;justify-content:center}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
-<div id="scroller"></head>
-<body>
-<div class="wrap">
+<div id="scroller"><div class="wrap landing" id="wrap">
   <header class="hdr">
     <div class="eyebrow" id="eyebrow"><b>MOTION ANALYSIS · PICKLEBALL</b></div>
     <h1 id="title">邁向匹克球<em>神之路</em></h1>

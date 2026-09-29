@@ -775,6 +775,7 @@
     $('method').innerHTML = li.map((x) => `<li>${x}</li>`).join('');
   }
   function buildAll() {
+    $('wrap').classList.remove('landing');
     buildHeader(); buildShots(); buildProblems(); buildGoods(); buildTable(); buildQC(); buildMethod();
     ['secProblems', 'secGood', 'secTable', 'secQC', 'secMethod'].forEach((id) => { $(id).hidden = false; });
     const has = st.res.shots.some((s) => !s.excluded);
