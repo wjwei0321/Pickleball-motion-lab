@@ -116,6 +116,26 @@ button,select,input{font:inherit;color:inherit}
 .pickwrap{position:relative;max-width:100%;align-self:flex-start;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:crosshair}
 .pickwrap canvas{display:block;max-width:100%;max-height:60vh;width:auto;height:auto}
 .pickrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.trim{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
+.trimvid{position:relative;align-self:center;max-width:100%;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#05090d}
+.trimvid video{display:block;max-width:100%;max-height:min(55vh,520px);width:auto;height:auto}
+.trimnow{position:absolute;left:8px;top:8px;background:rgba(8,16,23,.8);padding:2px 8px;border-radius:6px;font-size:12px;color:var(--text)}
+.trimbar{position:relative;height:56px;border-radius:9px;overflow:hidden;background:#0a141c;border:1px solid var(--line);touch-action:none}
+.trimbar .thumbs{position:absolute;inset:0;display:flex}
+.trimbar .thumbs canvas{flex:1;min-width:0;height:100%;object-fit:cover;opacity:.9}
+.trimbar .shade{position:absolute;top:0;bottom:0;background:rgba(5,9,13,.72);pointer-events:none}
+.trimbar .shade.l{left:0} .trimbar .shade.r{right:0}
+.trimbar .win{position:absolute;top:0;bottom:0;border:3px solid var(--player);border-radius:8px;pointer-events:none;box-shadow:0 0 12px rgba(255,210,63,.35)}
+.trimbar .playhead{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;box-shadow:0 0 6px #fff;pointer-events:none;transform:translateX(-1px)}
+.trimbar input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;background:none;-webkit-appearance:none;appearance:none;pointer-events:none}
+.trimbar input[type=range]::-webkit-slider-runnable-track{background:none;height:100%}
+.trimbar input[type=range]::-moz-range-track{background:none}
+.trimbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:22px;height:56px;background:var(--player);border-radius:6px;cursor:ew-resize;box-shadow:0 0 0 2px #081017}
+.trimbar input[type=range]::-moz-range-thumb{pointer-events:auto;width:22px;height:52px;background:var(--player);border:0;border-radius:6px;cursor:ew-resize}
+.trimbar input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--fix)}
+.triminfo{font-size:13px;color:#b9cad3;display:flex;flex-wrap:wrap;gap:4px 16px}
+.triminfo b{color:var(--text);font-weight:600}
+.triminfo .warn{color:var(--warn)}
 .cand{border:2px solid var(--fix);position:absolute;border-radius:6px;pointer-events:none}
 .cand span{position:absolute;top:-2px;left:-2px;background:var(--fix);color:#04161a;font:700 13px var(--f-mono);padding:0 7px;border-radius:5px 0 6px 0}
 .cand.sel{border-color:var(--player)} .cand.sel span{background:var(--player)}
@@ -338,6 +358,27 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
       <div class="procmsg" id="procLine"><span id="procMsg">準備中…</span><span class="mono" id="procEta"></span></div>
       <div id="cancelRow"><button class="btn" id="cancelBtn">取消</button></div>
     </div>
+    <div class="trim" id="trim" hidden>
+      <div><b style="font-family:var(--f-head);font-size:17px">選擇要分析的片段</b>
+        <p style="color:var(--sub);font-size:13.5px">拖曳下方兩個<b style="color:var(--player)">黃色把手</b>設定開始和結束，只分析打球的那一段會更快、也更準。</p></div>
+      <div class="trimvid"><video id="vT" playsinline muted preload="auto"></video><span class="trimnow mono" id="trimNow">0:00.0</span></div>
+      <div class="trimbar" id="trimBar">
+        <div class="thumbs" id="trimThumbs"></div>
+        <div class="shade l" id="trimShadeL"></div><div class="shade r" id="trimShadeR"></div>
+        <div class="win" id="trimWin"></div>
+        <div class="playhead" id="trimHead"></div>
+        <input type="range" id="trimA" min="0" max="1" step="0.0333" value="0" aria-label="開始時間">
+        <input type="range" id="trimB" min="0" max="1" step="0.0333" value="1" aria-label="結束時間">
+      </div>
+      <div class="triminfo mono" id="trimInfo"></div>
+      <div class="pickrow">
+        <button class="btn" id="trimPlay">▶ 播放這段</button>
+        <button class="btn" id="trimSetA">把目前畫面設為開始</button>
+        <button class="btn" id="trimSetB">把目前畫面設為結束</button>
+        <button class="btn" id="trimAll">整支影片</button>
+      </div>
+      <div class="pickrow"><button class="btn primary" id="trimGo">使用這段，下一步</button><button class="btn" id="trimCancel">取消</button></div>
+    </div>
     <div class="picker" id="picker" hidden>
       <div><b style="font-family:var(--f-head);font-size:17px">要分析哪一位？</b>
         <p style="color:var(--sub);font-size:13.5px">於影片<b style="color:var(--player)">點選分析的球員</b>，並於下方按「分析這位球員」。</p></div>
@@ -347,6 +388,13 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     </div>
   </section>
 
+  <section class="sec" id="secQC" hidden>
+    <h2>擊球確認與品質檢查 <small>每拍取擊球前、擊球、擊球後三格</small></h2>
+    <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是橘色）、是不是真的有擊球，球種判斷錯了可以直接改，勾選或改球種後<b>會立刻自動重新計算</b>，不需要另外按確認；取消勾選就復原。</p>
+    <div class="crow"><span class="lbl">慣用手</span><select class="inp" id="handSel" aria-label="慣用手"></select></div>
+    <p class="qcmsg" id="qcMsg" role="status" aria-live="polite" hidden></p>
+    <div class="qc" id="qc"></div>
+  </section>
   <div class="upbar" id="upbar" hidden>
     <span>影片：<b id="ubName"></b></span><span id="ubInfo" class="mono"></span>
     <button class="btn" id="newVid">換一支影片</button>
@@ -420,13 +468,6 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     <h2>逐拍數據 <small><span><span class="k bad">紅字</span>＝超標</span><span><span class="k warn">橘字</span>＝接近邊界</span><span>白字＝在範圍內</span><span>點一列跳到那一拍</span></small></h2>
     <div class="filters" id="filters"></div>
     <div class="tblwrap"><table class="data" id="tbl"></table></div>
-  </section>
-  <section class="sec" id="secQC" hidden>
-    <h2>擊球確認與品質檢查 <small>每拍取擊球前、擊球、擊球後三格</small></h2>
-    <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是橘色）、是不是真的有擊球，球種判斷錯了可以直接改，勾選或改球種後<b>會立刻自動重新計算</b>，不需要另外按確認；取消勾選就復原。</p>
-    <div class="crow"><span class="lbl">慣用手</span><select class="inp" id="handSel" aria-label="慣用手"></select></div>
-    <p class="qcmsg" id="qcMsg" role="status" aria-live="polite" hidden></p>
-    <div class="qc" id="qc"></div>
   </section>
   <section class="sec" id="secMethod" hidden>
     <h2>方法說明 <small>數字怎麼來的、誤差多少</small></h2>

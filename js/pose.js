@@ -200,10 +200,12 @@ async function grabFrame(video, t, canvas, crop) {
  * 逐格追蹤目標球員
  * @param seed {cx, cy, long} 原影片像素，使用者在 t0 選的人
  */
-async function track(video, seed, t0, onProgress, shouldStop) {
+// range：{ f0, f1 } 只偵測 [f0, f1) 這段；陣列仍維持整支影片長度，範圍外的格沿用最近一格（不動 → 不會被當成擊球）
+async function track(video, seed, t0, onProgress, shouldStop, range) {
   const N = Math.max(1, Math.floor(video.duration * FPS));
+  const R0 = range ? Math.max(0, Math.min(N - 1, range.f0)) : 0, R1 = range ? Math.max(R0 + 1, Math.min(N, range.f1)) : N, M = R1 - R0;
   const img = new Array(N), world = new Array(N), detected = new Uint8Array(N);
-  const f0 = Math.min(N - 1, Math.max(0, Math.round(t0 * FPS)));
+  const f0 = Math.min(R1 - 1, Math.max(R0, Math.round(t0 * FPS)));
   let done = 0; const tStart = performance.now();
   let jumps = 0, retries = 0;
 
@@ -237,28 +239,28 @@ async function track(video, seed, t0, onProgress, shouldStop) {
         st.lastCx = b.cx; st.lastCy = b.cy; st.lastHx = b.hx; st.lastHy = b.hy; st.lastH = b.h; st.lostFor = 0;
       } else st.lostFor++;
       done++;
-      if (done % 3 === 0 || done === N) {
+      if (done % 3 === 0 || done === M) {
         const el = (performance.now() - tStart) / 1000;
-        onProgress && onProgress(done, N, el / done * (N - done));
+        onProgress && onProgress(done, M, el / done * (M - done));
         await new Promise((r) => setTimeout(r, 0));
       }
     }
     return st;
   }
   const init = { cx: seed.cx, cy: seed.cy, side: Math.max(seed.long * 2.2, 260), lastHx: seed.hx, lastHy: seed.hy, lastH: seed.h, lastCx: seed.cx, lastCy: seed.cy };
-  await pass(f0, N, 1, init);
+  await pass(f0, R1, 1, init);
   // 從選人的那一格往回追
   const st0 = { ...init };
   if (detected[f0]) { const b = boxOf(img[f0]); Object.assign(st0, { cx: b.cx, cy: b.cy, side: Math.max(b.long * 2.2, 260), lastHx: b.hx, lastHy: b.hy, lastH: b.h }); }
-  await pass(f0 - 1, -1, -1, st0);
+  await pass(f0 - 1, R0 - 1, -1, st0);
 
   // 插值補齊
   const got = []; for (let f = 0; f < N; f++) if (detected[f]) got.push(f);
-  if (!got.length) throw new Error('整支影片都沒有偵測到這位球員');
+  if (!got.length) throw new Error(range ? '這一段都沒有偵測到這位球員，試著調整片段或換一個時間點選人' : '整支影片都沒有偵測到這位球員');
   let filled = 0;
   for (let f = 0; f < N; f++) {
     if (detected[f]) continue;
-    filled++;
+    if (f >= R0 && f < R1) filled++;
     let a = -1, b = -1;
     for (let g = f - 1; g >= 0; g--) if (detected[g]) { a = g; break; }
     for (let g = f + 1; g < N; g++) if (detected[g]) { b = g; break; }
@@ -268,7 +270,7 @@ async function track(video, seed, t0, onProgress, shouldStop) {
     for (let i = 0; i < 99; i++) { I[i] = img[a][i] + (img[b][i] - img[a][i]) * t; Wd[i] = world[a][i] + (world[b][i] - world[a][i]) * t; }
     img[f] = I; world[f] = Wd;
   }
-  return { img, world, detected, N, filled, jumps, retries, W: video.videoWidth, H: video.videoHeight, seconds: (performance.now() - tStart) / 1000 };
+  return { img, world, detected, N, filled, jumps, retries, range: { f0: R0, f1: R1 }, M, W: video.videoWidth, H: video.videoHeight, seconds: (performance.now() - tStart) / 1000 };
 }
 
 window.PBPose = { init, findCandidates, track, seek, grabFrame, get delegate() { return delegateUsed; } };

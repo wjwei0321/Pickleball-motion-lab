@@ -381,17 +381,25 @@
       await loadVideo(vA, st.url);
       const dur = vA.duration;
       if (!Number.isFinite(dur) || dur <= 0) throw new Error('讀不到影片長度');
-      stepUI(1, `影片 ${vA.videoWidth}×${vA.videoHeight}、${dur.toFixed(1)} 秒，統一換算成 30fps（${Math.floor(dur * FPS)} 格）。載入偵測模型…`, 0.05);
       const P = await waitPose();
+      P.init(st.model).catch(() => { /* 等一下正式載入時會再回報錯誤 */ }); // 使用者剪片時先在背景載入引擎
+      stepUI(0, '選擇要分析的片段', 0.04);
+      $('procLine').hidden = $('cancelRow').hidden = true;
+      const range = dur > 1.5 ? await showTrim(dur) : { a: 0, b: dur };
+      st.range = range;
+      $('procLine').hidden = $('cancelRow').hidden = false;
+      const nF = Math.floor(range.b * FPS) - Math.round(range.a * FPS);
+      stepUI(1, `片段 ${A.fmtTime(range.a)}–${A.fmtTime(range.b)}（${(range.b - range.a).toFixed(1)} 秒，${nF} 格）。載入偵測模型…`, 0.05);
       const eng = await P.init(st.model, (m, f) => stepUI(1, m + '…', 0.05 + f * 0.1));
       $('engineStatus').textContent = `就緒（${st.model}，${eng.delegate}）`;
       stepUI(2, '找畫面中的人…', 0.16);
-      await showPicker(Math.min(dur * 0.1, 2));
+      await showPicker(range.a + Math.min((range.b - range.a) * 0.1, 2));
     } catch (e) { fail(e); }
   }
   window.addEventListener('unhandledrejection', (e) => { if (!$('proc').hidden && $('picker').hidden) fail(e.reason || e); });
   window.addEventListener('error', (e) => { if (!$('proc').hidden && $('picker').hidden && e.message) fail(new Error(e.message)); });
   function fail(e) {
+    $('trim').hidden = true; $('vT').pause();
     setBusy(false);
     $('procLine').hidden = $('cancelRow').hidden = false;
     console.error(e);
@@ -399,6 +407,73 @@
     $('procEta').textContent = '';
     $('engineStatus').textContent = $('engineStatus').textContent.startsWith('就緒') ? $('engineStatus').textContent : `未就緒：${e.message || e}`;
     $('steps').querySelector('.run')?.classList.remove('run');
+  }
+
+  // ---------- 剪輯片段 ----------
+  function showTrim(dur) {
+    return new Promise((resolve, reject) => {
+      const vT = $('vT'), IA = $('trimA'), IB = $('trimB'), MINLEN = 1;
+      let segPlay = false, alive = true;
+      vT.src = st.url; vT.muted = true; vT.playsInline = true; vT.load();
+      [IA, IB].forEach((x) => { x.min = 0; x.max = dur.toFixed(3); x.step = (1 / FPS).toFixed(4); });
+      IA.value = 0; IB.value = dur;
+      const pct = (t) => `${(t / dur * 100).toFixed(3)}%`;
+      const setPlayLabel = () => { $('trimPlay').textContent = segPlay ? '❚❚ 暫停' : '▶ 播放這段'; };
+      function upd(which) {
+        let a = +IA.value, b = +IB.value;
+        if (b - a < MINLEN) {
+          if (which === 'A') IA.value = Math.max(0, b - MINLEN); else IB.value = Math.min(dur, a + MINLEN);
+          a = +IA.value; b = +IB.value;
+        }
+        $('trimShadeL').style.width = pct(a); $('trimShadeR').style.width = pct(dur - b);
+        $('trimWin').style.left = pct(a); $('trimWin').style.width = pct(b - a);
+        const len = b - a, frames = Math.floor(b * FPS) - Math.round(a * FPS);
+        $('trimInfo').innerHTML = `<span>開始 <b>${A.fmtTime(a)}</b></span><span>結束 <b>${A.fmtTime(b)}</b></span><span>長度 <b>${len.toFixed(1)} 秒</b>（${frames} 格）</span>` +
+          (len > 40 ? '<span class="warn">手機上建議 30 秒以內，分析較快、也比較不會當掉</span>' : '');
+      }
+      function previewAt(t) { segPlay = false; vT.pause(); setPlayLabel(); vT.currentTime = Math.min(dur - 0.01, Math.max(0, t)); }
+      IA.oninput = () => { upd('A'); previewAt(+IA.value); };
+      IB.oninput = () => { upd('B'); previewAt(+IB.value); };
+      // 點時間軸其他地方：預覽那個時間
+      $('trimBar').onpointerdown = (e) => {
+        if (e.target === IA || e.target === IB) return;
+        const r = $('trimBar').getBoundingClientRect();
+        previewAt((e.clientX - r.left) / r.width * dur);
+      };
+      $('trimPlay').onclick = () => {
+        if (segPlay) { previewAt(vT.currentTime); return; }
+        const a = +IA.value, b = +IB.value;
+        if (vT.currentTime < a || vT.currentTime >= b - 0.05) vT.currentTime = a;
+        segPlay = true; setPlayLabel();
+        vT.play().catch(() => { segPlay = false; setPlayLabel(); });
+      };
+      $('trimSetA').onclick = () => { IA.value = Math.min(vT.currentTime, +IB.value - MINLEN); upd('A'); };
+      $('trimSetB').onclick = () => { IB.value = Math.max(vT.currentTime, +IA.value + MINLEN); upd('B'); };
+      $('trimAll').onclick = () => { IA.value = 0; IB.value = dur; upd('B'); };
+      (function tick() {
+        if (!alive) return;
+        const t = vT.currentTime;
+        if (segPlay && t >= +IB.value) { vT.pause(); vT.currentTime = +IA.value; segPlay = false; setPlayLabel(); }
+        $('trimHead').style.left = pct(Math.min(dur, t)); $('trimNow').textContent = A.fmtTime(t);
+        requestAnimationFrame(tick);
+      })();
+      // 縮圖條（用分析用的影片元素取格；按下一步前會先等它停下）
+      const thumbs = $('trimThumbs'); thumbs.innerHTML = '';
+      const K = window.innerWidth < 600 ? 7 : 12, ar = vA.videoWidth / vA.videoHeight || 1;
+      const cvs = Array.from({ length: K }, () => { const c = document.createElement('canvas'); c.height = 56; c.width = Math.max(20, Math.round(56 * ar)); thumbs.appendChild(c); return c; });
+      const thumbJob = (async () => {
+        for (let i = 0; i < K && alive; i++) await window.PBPose.grabFrame(vA, dur * (i + 0.5) / K, cvs[i]);
+      })().catch(() => {});
+      upd('B'); previewAt(0);
+      $('trim').hidden = false;
+      $('trim').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'nearest' });
+      const finish = async (ok) => {
+        alive = false; vT.pause(); await thumbJob; $('trim').hidden = true;
+        if (ok) resolve({ a: +IA.value, b: +IB.value }); else reject(new Error('已取消'));
+      };
+      $('trimGo').onclick = () => finish(true);
+      $('trimCancel').onclick = () => finish(false);
+    });
   }
 
   async function showPicker(t) {
@@ -420,8 +495,8 @@
       d.innerHTML = `<span>${i + 1}</span>`; wrap.appendChild(d);
     });
     $('pickMsg').textContent = cands.length ? `找到 ${cands.length} 位，點選要分析的那一位。` : '這一格沒有自動找到人，直接點在球員身上，或換一個時間點。';
-    const dur = vA.duration;
-    $('pickTimes').innerHTML = '<span class="lbl">換時間點</span>' + [0.1, 0.3, 0.5, 0.7, 0.9].map((p) => `<button class="btn" data-pt="${(dur * p).toFixed(2)}">${A.fmtTime(dur * p)}</button>`).join('');
+    const ra = st.range ? st.range.a : 0, rl = (st.range ? st.range.b : vA.duration) - ra;
+    $('pickTimes').innerHTML = '<span class="lbl">換時間點</span>' + [0.1, 0.3, 0.5, 0.7, 0.9].map((p) => `<button class="btn" data-pt="${(ra + rl * p).toFixed(2)}">${A.fmtTime(ra + rl * p)}</button>`).join('');
     $('pickTimes').querySelectorAll('[data-pt]').forEach((b) => b.addEventListener('click', () => showPicker(parseFloat(b.dataset.pt)).catch(fail)));
     $('pickGo').disabled = true;
     stepUI(2, '請選擇要分析的球員', 0.18);
@@ -448,11 +523,11 @@
     const raw = await P.track(vA, st.seed, st.pickT, (d, n, eta) => {
       stepUI(3, `逐格姿勢偵測 ${d} / ${n} 格`, 0.2 + 0.7 * d / n);
       $('procEta').textContent = `剩約 ${Math.ceil(eta)} 秒`;
-    }, () => st.cancel);
+    }, () => st.cancel, st.range ? { f0: Math.round(st.range.a * FPS), f1: Math.floor(st.range.b * FPS) } : null);
     $('procEta').textContent = '';
     raw.name = st.file.name; raw.duration = vA.duration; raw.srcW = vA.videoWidth; raw.srcH = vA.videoHeight;
     st.raw = raw; st.overrides = {}; st.thumbs = {}; resetZoom(); $('qcMsg').hidden = true;
-    stepUI(4, `偵測完成：${raw.N - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
+    stepUI(4, `偵測完成：${(raw.M || raw.N) - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
     await new Promise((r) => setTimeout(r, 30));
     stepUI(5, '找出擊球…', 0.94);
     analyzeAndBuild(true);
@@ -462,6 +537,7 @@
   function analyzeAndBuild(first) {
     const raw = st.raw;
     const res = A.run(raw, { hand: st.hand === 'auto' ? null : st.hand, overrides: st.overrides });
+    if (raw.range) for (const s of res.shots) { s.start = Math.max(s.start, raw.range.f0); s.end = Math.min(s.end, raw.range.f1 - 1); }
     res.gP = groundSeries(res.S); res.gC = groundSeries(res.C);
     res.overlay = overlayTrack(raw);
     st.res = res;
@@ -476,7 +552,7 @@
     buildAll();
     const act = res.shots.filter((s) => !s.excluded);
     selectShot(act.length ? (act.find((s) => s.idx === st.shot) ? st.shot : act[0].idx) : -1, first && !RM);
-    if (first) { makeThumbs(); $('lab').scrollIntoView({ behavior: RM ? 'auto' : 'smooth' }); }
+    if (first) { makeThumbs(); $('secQC').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' }); }
   }
 
   function overlayTrack(raw) {
@@ -660,7 +736,8 @@
     const li = [
       `<b>影片</b>：${esc(raw.name)}，${raw.srcW}×${raw.srcH}，${raw.duration.toFixed(1)} 秒，瀏覽器自動轉正方向，統一以 30fps 取樣共 ${raw.N} 格。`,
       `<b>姿勢偵測</b>：MediaPipe Pose Landmarker（${st.model === 'heavy' ? 'heavy' : 'full'}，float16，${window.PBPose?.delegate || ''}），每格 33 個關節點（2D + 3D）。以上一格關節外框 ×2.2 的正方形裁切追蹤、放大到 768 px 再偵測；髖中點跳動超過身高 40% 視為追到別人，丟棄改用插值。`,
-      `<b>偵測結果</b>：${raw.N - raw.filled} 格直接抓到、${raw.filled} 格（${(raw.filled / raw.N * 100).toFixed(1)}%）用前後格線性插值補齊；因疑似追到隊友而丟棄 ${raw.jumps} 次；處理時間 ${raw.seconds.toFixed(0)} 秒。`,
+      `<b>分析片段</b>：${raw.range ? `${A.fmtTime(raw.range.f0 / FPS)}–${A.fmtTime(raw.range.f1 / FPS)}（${raw.M} 格）` : '整支影片'}。`,
+      `<b>偵測結果</b>：${(raw.M || raw.N) - raw.filled} 格直接抓到、${raw.filled} 格（${(raw.filled / (raw.M || raw.N) * 100).toFixed(1)}%）用前後格線性插值補齊；因疑似追到隊友而丟棄 ${raw.jumps} 次；處理時間 ${raw.seconds.toFixed(0)} 秒。`,
       `<b>找擊球</b>：3D 座標先做 5 格移動平均，找持拍手腕速度的局部最大值（±8 格）。> 3 m/s 算大動作（抽球、扣殺、發球），1.2–3 m/s 算小動作（小球、截擊、吊球）。慣用手${res.handAuto ? '由兩手速度自動判斷為' : '由你指定為'}${res.hand === 'R' ? '右手' : '左手'}。`,
       `<b>擊球格全部是推估</b>：匹克球是洞洞塑膠球，網頁無法確認球碰到拍面的那一格，一律用速度峰值 +1 格，並標「推估」。球種也是自動判斷，可以在「擊球確認」修改。`,
       `<b>單一鏡頭的 3D 誤差</b>：角度約 ±5–10°，距離約 ±5–10 cm。正面拍攝時，「轉肩」「擊球點在身前」這類水平轉動與前後距離的數字誤差更大，當參考就好。肚臍高度以髖中點往上 10 cm 估計。`,
