@@ -11,7 +11,7 @@
   const st = {
     hand: 'auto', model: 'full', file: null, url: null,
     raw: null, res: null, overrides: {}, shot: 0, mode: 'overlay', view: 'cam',
-    speed: 0.5, freeze: false, frozen: false, freezeEnd: 0, lastF: -1, playing: false,
+    speed: 0.5, freeze: true, frozen: false, freezeEnd: 0, lastF: -1, playing: false,
     videoOk: true, clockT: 0, cancel: false, thumbs: {}, filter: 'all',
     pickT: 0, cands: [], seed: null,
   };
