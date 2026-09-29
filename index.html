@@ -82,13 +82,13 @@ button,select,input{font:inherit;color:inherit}
 .chip.ref{border-style:dashed}
 
 /* upload */
-.upload{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;background:linear-gradient(180deg,#0d1922,#0a141c);border:1px solid var(--line);border-radius:14px;padding:18px}
+.upload{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start;gap:18px;background:linear-gradient(180deg,#0d1922,#0a141c);border:1px solid var(--line);border-radius:14px;padding:18px}
 @media (max-width:860px){.upload{grid-template-columns:1fr}}
-.drop{border:1.5px dashed #2a4659;border-radius:12px;padding:22px 18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;justify-content:center;min-height:190px;position:relative;transition:border-color .15s,background .15s}
+.drop{border:1.5px dashed #2a4659;border-radius:12px;padding:22px 18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;justify-content:flex-start;height:auto;min-height:0;position:relative;transition:border-color .15s,background .15s}
 .drop.over{border-color:var(--player);background:rgba(255,210,63,.06)}
 .drop h3{font-size:20px;font-weight:600}
 .drop p{color:var(--sub);font-size:13.5px}
-.opts{display:flex;flex-direction:column;gap:12px}
+.opts{display:flex;flex-direction:column;gap:12px;min-width:0}
 .opt{display:flex;flex-direction:column;gap:6px}
 .tips{color:var(--sub);font-size:13px;display:flex;flex-direction:column;gap:4px;padding-left:0;margin:0;list-style:none}
 .pwait{display:flex;gap:12px;align-items:flex-start;background:rgba(255,210,63,.07);border:1px solid rgba(255,210,63,.45);border-radius:10px;padding:10px 12px}
@@ -99,6 +99,7 @@ button,select,input{font:inherit;color:inherit}
 .btn:disabled:hover{border-color:var(--line)}
 .lockmsg{font-size:13px;color:var(--warn);background:rgba(255,159,67,.08);border:1px solid rgba(255,159,67,.4);border-radius:8px;padding:6px 10px}
 .drop.locked{opacity:.6}
+.tips-side{display:none}
 .tips li::before{content:"› ";color:var(--player)}
 .upbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--sub)}
 .upbar b{color:var(--text);font-weight:500}
@@ -297,7 +298,10 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .hiddenvid{position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none}
 @media (orientation:landscape) and (max-height:540px){
-  .upload{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+  .upload{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);padding:14px;gap:14px}
+  .tips-drop{display:none}.tips-side{display:flex}
+  .upload{align-items:stretch}
+  .drop{padding:16px}
   .stage{--stageH:calc(100svh - 16px);grid-template-columns:minmax(0,var(--colL)) minmax(0,var(--colR));gap:10px}
   .ratioGrp{display:flex!important}
   .v3d{height:var(--stageH);min-height:0}
@@ -337,7 +341,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <p>選好影片後，手機會先轉檔或從 iCloud 下載，較長的影片可能要 10 秒到 1 分鐘，這段時間畫面不會動是正常的，請停在這一頁。準備好會自動開始分析。</p>
         <button class="btn" id="pickWaitX" style="margin-top:6px;padding:3px 10px;font-size:12px">我沒有選影片，取消等待</button></div>
       </div>
-      <div class="opt" style="margin-top:4px">
+      <div class="opt tips-drop" style="margin-top:4px">
         <span class="lbl">拍攝建議</span>
         <ul class="tips">
           <li>從側後方約 45° 拍，手機橫放，離球員 5–8 公尺讓全身入鏡</li>
@@ -363,6 +367,14 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
           <button class="btn" data-model="full" aria-pressed="true">快速（full，約 9 MB，預設）</button>
           <button class="btn" data-model="heavy" aria-pressed="false">精準（heavy，約 31 MB）</button>
         </div>
+      </div>
+      <div class="opt tips-side">
+        <span class="lbl">拍攝建議</span>
+        <ul class="tips">
+          <li>從側後方約 45° 拍，手機橫放，離球員 5–8 公尺讓全身入鏡</li>
+          <li>可以的話用 60fps，小球動作很快</li>
+          <li>雙打時讓要分析的人站在畫面中間、不被隊友擋到</li>
+        </ul>
       </div>
     </div>
     <div class="proc" id="proc" hidden>
