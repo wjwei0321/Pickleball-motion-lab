@@ -92,9 +92,10 @@ button,select,input{font:inherit;color:inherit}
 .cand.sel{border-color:var(--player)} .cand.sel span{background:var(--player)}
 
 /* stage */
-.stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
-@media (max-width:980px){.stage{grid-template-columns:1fr}}
-.v3d{position:relative;height:min(74vh,660px);min-height:420px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 50% 30%,#0d1c27 0%,#081017 70%)}
+.stage{--stageH:min(74vh,660px);--colL:5fr;--colR:5fr;display:grid;grid-template-columns:minmax(0,var(--colL)) minmax(0,var(--colR));gap:14px;align-items:start}
+.stage[data-ratio="4:6"]{--colL:4fr;--colR:6fr} .stage[data-ratio="6:4"]{--colL:6fr;--colR:4fr}
+@media (max-width:980px){.stage{grid-template-columns:1fr}.ratioGrp{display:none!important}}
+.v3d{position:relative;height:var(--stageH);min-height:420px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 50% 30%,#0d1c27 0%,#081017 70%)}
 @media (max-width:520px){.v3d{height:470px;min-height:0}}
 .v3d canvas.gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .hud{position:absolute;z-index:3;font-family:var(--f-mono);font-size:11.5px;background:rgba(8,16,23,.72);border:1px solid rgba(29,50,67,.9);border-radius:9px;padding:8px 10px;backdrop-filter:blur(3px);pointer-events:none}
@@ -135,11 +136,26 @@ button,select,input{font:inherit;color:inherit}
 @keyframes flash{0%{opacity:.55}100%{opacity:0}}
 
 .side{display:flex;flex-direction:column;gap:14px;min-width:0}
-@media (max-width:980px) and (min-width:640px){.side{display:grid;grid-template-columns:1fr 1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card h3{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.ovwrap{position:relative;aspect-ratio:1/1;max-width:100%;border-radius:8px;overflow:hidden;background:#05090d}
-.ovwrap canvas{width:100%;height:100%;display:block}
+.vcard{height:var(--stageH);min-height:420px}
+.ovwrap{position:relative;flex:1;min-height:0;max-width:100%;border-radius:8px;overflow:hidden;background:#05090d}
+.ovwrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.ovwrap canvas.drag{cursor:grabbing}
+@media (max-width:980px){.vcard{height:auto;min-height:0}.ovwrap{flex:none;height:min(70vh,560px)}}
+.zoombar{position:absolute;right:8px;bottom:8px;display:flex;gap:4px;align-items:center;z-index:2}
+.zoombar .btn{padding:3px 9px;font-size:13px;background:rgba(8,16,23,.8);color:var(--text)}
+.zoombar .zv{font:500 11px var(--f-mono);color:var(--sub);background:rgba(8,16,23,.8);padding:3px 6px;border-radius:6px}
+.ovhint{position:absolute;left:8px;bottom:8px;font-size:11px;color:var(--sub);background:rgba(8,16,23,.7);padding:2px 7px;border-radius:6px;z-index:2;pointer-events:none}
+details.card>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary h3{font-size:14px;font-weight:600;display:flex;gap:8px;align-items:baseline}
+.sumchips{display:flex;gap:6px;align-items:center;font:500 11.5px var(--f-mono);flex-wrap:wrap}
+.sumchips .c{display:inline-flex;align-items:center;gap:4px;color:#b8cad4}
+.sumchips .c::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--sub)}
+.sumchips .c.bad::before{background:var(--bad)} .sumchips .c.warn::before{background:var(--warn)} .sumchips .c.ok::before{background:var(--ok)}
+.sumchips .tog{color:var(--player);font-family:var(--f-body)}
+details.card[open] .sumchips .tog .o{display:none} details.card:not([open]) .sumchips .tog .x{display:none}
 .mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:12.5px;padding:5px 0;border-top:1px solid rgba(29,50,67,.6)}
 .mrow:first-of-type{border-top:0}
 .mrow .nm{display:flex;align-items:center;gap:7px}
@@ -301,11 +317,13 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <div class="grp"><span class="lbl">顯示</span><div class="seg" id="modeSeg">
           <button class="btn" data-mode="overlay" aria-pressed="true">疊在一起</button><button class="btn" data-mode="side" aria-pressed="false">左右並排</button><button class="btn" data-mode="player" aria-pressed="false">只看球員</button><button class="btn" data-mode="fix" aria-pressed="false">只看矯正</button></div></div>
         <button class="btn" id="freezeBtn" aria-pressed="true">擊球定格：開</button>
+        <div class="grp ratioGrp"><span class="lbl">版面</span><div class="seg" id="ratioSeg">
+          <button class="btn" data-ratio="4:6" aria-pressed="false" title="3D 窄、影片寬（適合直拍）">4 : 6</button><button class="btn" data-ratio="5:5" aria-pressed="true">5 : 5</button><button class="btn" data-ratio="6:4" aria-pressed="false" title="3D 寬、影片窄（適合橫拍）">6 : 4</button></div></div>
         <div class="grp"><span class="lbl">視角</span><div class="seg" id="viewSeg">
           <button class="btn" data-view="cam" aria-pressed="true">原始鏡頭</button><button class="btn" data-view="front" aria-pressed="false">正前方</button><button class="btn" data-view="side" aria-pressed="false">側面</button><button class="btn" data-view="top" aria-pressed="false">俯視</button></div></div>
       </div>
     </div>
-    <div class="stage">
+    <div class="stage" id="stage" data-ratio="5:5">
       <div class="v3d" id="v3d">
         <canvas class="gl" id="gl" aria-label="3D 動作重建"></canvas>
         <div class="hud hudL" id="hudL" hidden></div>
@@ -322,14 +340,17 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <div class="empty3d" id="empty3d"><div><b>3D 動作捕捉實驗室</b><p>上傳影片後，這裡會出現你的半透明人形（黃色）和矯正版（青色）疊在一起播放，旁邊是原始影片疊骨架。可以用滑鼠或手指旋轉視角。</p></div></div>
       </div>
       <aside class="side">
-        <div class="card">
+        <div class="card vcard">
           <h3>原始影片疊骨架 <span class="tag" id="ovTag">—</span></h3>
-          <div class="ovwrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片疊上骨架"></canvas></div>
+          <div class="ovwrap" id="ovWrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片疊上骨架，可用滑鼠滾輪或兩指縮放、拖曳移動"></canvas>
+            <span class="ovhint" id="ovHint">滾輪／兩指縮放 · 拖曳移動 · 雙擊重設</span>
+            <div class="zoombar"><button class="btn" id="zOut" aria-label="縮小">−</button><span class="zv" id="zVal">100%</span><button class="btn" id="zIn" aria-label="放大">＋</button><button class="btn" id="zReset">重設</button></div>
+          </div>
         </div>
-        <div class="card" id="shotCard">
-          <h3>這一拍的體檢 <span class="tag" id="scTag">—</span></h3>
+        <details class="card" id="shotCard">
+          <summary><h3>這一拍的體檢 <span class="tag" id="scTag">—</span></h3><span class="sumchips" id="scSum"><span class="tog"><span class="o">展開數據 ▾</span><span class="x">收合 ▴</span></span></span></summary>
           <div id="scBody" style="font-size:13px;color:var(--sub)">分析完成後，選一拍就會列出這一拍的各項數據：<span style="color:var(--player)">球員</span> → <span style="color:var(--fix)">矯正版</span>。</div>
-        </div>
+        </details>
       </aside>
     </div>
 

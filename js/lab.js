@@ -419,7 +419,7 @@
     }, () => st.cancel);
     $('procEta').textContent = '';
     raw.name = st.file.name; raw.duration = vA.duration; raw.srcW = vA.videoWidth; raw.srcH = vA.videoHeight;
-    st.raw = raw; st.overrides = {}; st.thumbs = {};
+    st.raw = raw; st.overrides = {}; st.thumbs = {}; resetZoom();
     stepUI(4, `偵測完成：${raw.N - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
     await new Promise((r) => setTimeout(r, 30));
     stepUI(5, '找出擊球…', 0.94);
@@ -524,7 +524,10 @@
     });
   }
   function buildShotCard(s) {
-    if (!s) { $('scBody').textContent = '沒有可顯示的擊球。'; $('scTag').textContent = '—'; return; }
+    if (!s) { $('scBody').textContent = '沒有可顯示的擊球。'; $('scTag').textContent = '—'; $('scSum').innerHTML = '<span class="tog"><span class="o">展開數據 ▾</span><span class="x">收合 ▴</span></span>'; return; }
+    const cnt = { bad: 0, warn: 0, ok: 0 };
+    Object.values(s.st).forEach((v) => { if (cnt[v] != null) cnt[v]++; });
+    $('scSum').innerHTML = [['bad', '超標'], ['warn', '接近'], ['ok', '合格']].filter(([k]) => cnt[k]).map(([k, l]) => `<span class="c ${k}">${cnt[k]} ${l}</span>`).join('') + '<span class="tog"><span class="o">展開數據 ▾</span><span class="x">收合 ▴</span></span>';
     $('scTag').textContent = `#${s.idx + 1} ${A.TYPES[s.type].short}`;
     const hand = s.type === 'serve' ? '' : s.backhand ? (s.twoHanded ? '雙手反手' : '反手') : '正手';
     const keys = ['lean', 'knee', 'front', 'backswing', 'turn', 'ready', 'offhand', 'follow', 'serveH', 'serveVy', 'stance'].filter((k) => s.st[k] !== 'na');
@@ -663,7 +666,8 @@
       const tgt = $('qc').querySelector(`[data-thumb="${s.peak}"]`); if (tgt) tgt.getContext('2d').drawImage(cv, 0, 0);
     }
   }
-  function drawSkeleton(ctx, I, crop, size, hand, qc, emph) {
+  function drawSkeleton(ctx, I, crop, size, hand, qc, emph, ref) {
+    const lw = ref || size;
     const k = size / crop.side, px = (j) => [(I[j * 3] - crop.x) * k, (I[j * 3 + 1] - crop.y) * k];
     const racket = hand === 'L' ? new Set([11, 13, 15, 19, 23, 25, 27, 29, 31]) : new Set([12, 14, 16, 20, 24, 26, 28, 30, 32]);
     ctx.lineCap = 'round';
@@ -672,12 +676,12 @@
         const pa = px(a), pb = px(b);
         const rk = qc && racket.has(a) && racket.has(b);
         ctx.strokeStyle = pass === 0 ? 'rgba(255,210,63,0.28)' : rk ? '#FF9F43' : '#FFD23F';
-        ctx.lineWidth = pass === 0 ? size / 60 : Math.max(1.5, size / 180);
+        ctx.lineWidth = pass === 0 ? lw / 60 : Math.max(1.5, lw / 180);
         ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
       }
     }
     ctx.fillStyle = '#fff';
-    for (const j of A.KEEP) { const p = px(j); ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, size / 200), 0, Math.PI * 2); ctx.fill(); }
+    for (const j of A.KEEP) { const p = px(j); ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, lw / 200), 0, Math.PI * 2); ctx.fill(); }
     if (emph) { ctx.strokeStyle = '#FFD23F'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, size - 2, size - 2); }
   }
 
@@ -727,6 +731,13 @@
   $('modeSeg').querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { st.mode = b.dataset.mode; setSegPressed($('modeSeg'), 'mode', st.mode); applyMode(); }));
   $('viewSeg').querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
   $('freezeBtn').addEventListener('click', () => { st.freeze = !st.freeze; $('freezeBtn').setAttribute('aria-pressed', String(st.freeze)); $('freezeBtn').textContent = `擊球定格：${st.freeze ? '開' : '關'}`; if (!st.freeze && st.frozen) { st.frozen = false; $('impact').hidden = true; if (st.playing) startVideo(); } });
+  function setRatio(r, save) {
+    $('stage').dataset.ratio = r; setSegPressed($('ratioSeg'), 'ratio', r);
+    st.callouts?.forEach((c) => { c.w = 0; });
+    if (save) { try { localStorage.setItem('pb-ratio', r); } catch (e) { /* 無法儲存就算了 */ } }
+  }
+  $('ratioSeg').querySelectorAll('[data-ratio]').forEach((b) => b.addEventListener('click', () => setRatio(b.dataset.ratio, true)));
+  try { const r = localStorage.getItem('pb-ratio'); if (r && ['4:6', '5:5', '6:4'].includes(r)) setRatio(r, false); } catch (e) { /* 沒有儲存的偏好 */ }
   function setView(v) { st.view = v; setSegPressed($('viewSeg'), 'view', v); applyView(false); }
 
   let camTween = null;
@@ -942,16 +953,56 @@
   }
 
   // ---------- 疊骨架影片 ----------
-  const ovCtx = $('ovCv').getContext('2d');
+  const ovCv = $('ovCv'), ovCtx = ovCv.getContext('2d');
+  // 縮放與拖曳：zoom 相對於「以球員為中心的預設裁切」，pan 是原影片像素的位移
+  const ov = { zoom: 1, panX: 0, panY: 0, k: 1, W: 540, H: 540 };
+  const clampZoom = (z) => Math.max(0.3, Math.min(6, z));
+  function zoomAt(z, cx, cy) {
+    // 讓 (cx, cy) 這個畫面位置下的影片內容維持不動
+    const nz = clampZoom(z), k0 = ov.k, k1 = k0 * nz / ov.zoom;
+    ov.panX += (cx - ov.W / 2) * (1 / k0 - 1 / k1);
+    ov.panY += (cy - ov.H / 2) * (1 / k0 - 1 / k1);
+    ov.zoom = nz; $('zVal').textContent = `${Math.round(nz * 100)}%`;
+  }
+  function resetZoom() { ov.zoom = 1; ov.panX = ov.panY = 0; $('zVal').textContent = '100%'; }
+  $('zIn').addEventListener('click', () => zoomAt(ov.zoom * 1.25, ov.W / 2, ov.H / 2));
+  $('zOut').addEventListener('click', () => zoomAt(ov.zoom / 1.25, ov.W / 2, ov.H / 2));
+  $('zReset').addEventListener('click', resetZoom);
+  ovCv.addEventListener('dblclick', resetZoom);
+  const cvPos = (e) => { const r = ovCv.getBoundingClientRect(); return [(e.clientX - r.left) * ov.W / r.width, (e.clientY - r.top) * ov.H / r.height]; };
+  ovCv.addEventListener('wheel', (e) => { e.preventDefault(); const [x, y] = cvPos(e); zoomAt(ov.zoom * Math.exp(-e.deltaY * 0.0015), x, y); $('ovHint').hidden = true; }, { passive: false });
+  const ptrs = new Map(); let pinch = null;
+  ovCv.addEventListener('pointerdown', (e) => { ovCv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, cvPos(e)); ovCv.classList.add('drag'); $('ovHint').hidden = true;
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: ov.zoom }; } });
+  ovCv.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId), cur = cvPos(e); ptrs.set(e.pointerId, cur);
+    if (ptrs.size === 1) { ov.panX -= (cur[0] - prev[0]) / ov.k; ov.panY -= (cur[1] - prev[1]) / ov.k; }
+    else if (ptrs.size === 2 && pinch) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); zoomAt(pinch.z * d / Math.max(10, pinch.d), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
+  });
+  const endPtr = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) ovCv.classList.remove('drag'); };
+  ovCv.addEventListener('pointerup', endPtr); ovCv.addEventListener('pointercancel', endPtr);
+  function sizeOverlay() {
+    const r = ovCv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.max(50, Math.round(r.width * dpr)), H = Math.max(50, Math.round(r.height * dpr));
+    if (ovCv.width !== W || ovCv.height !== H) { ovCv.width = W; ovCv.height = H; }
+    ov.W = W; ov.H = H;
+  }
+  new ResizeObserver(sizeOverlay).observe($('ovWrap'));
   function drawOverlay(f) {
     const res = st.res, raw = st.raw; if (!res) return;
     const fi = Math.max(0, Math.min(raw.N - 1, Math.round(f)));
-    const side = Math.max(160, res.overlay.side[fi]), cx = res.overlay.cx[fi], cy = res.overlay.cy[fi] - side * 0.05;
-    const crop = { x: cx - side / 2, y: cy - side / 2, side };
-    ovCtx.fillStyle = '#05090d'; ovCtx.fillRect(0, 0, 540, 540);
-    if (st.videoOk && vP.readyState >= 2) { try { ovCtx.drawImage(vP, crop.x, crop.y, side, side, 0, 0, 540, 540); } catch (e) { /* 影格還沒好 */ } }
-    ovCtx.fillStyle = 'rgba(8,16,23,0.32)'; ovCtx.fillRect(0, 0, 540, 540);
-    drawSkeleton(ovCtx, frameAt(raw.img, f), crop, 540, res.hand, false, false);
+    const W = ov.W, H = ov.H;
+    // 預設：身體像素高度 ×2.3 的範圍剛好放進畫面較短的一邊
+    const base = Math.max(160, res.overlay.side[fi]);
+    const k = Math.min(W, H) / base * ov.zoom; ov.k = k;
+    const sw = W / k, sh = H / k;
+    const cx = res.overlay.cx[fi] + ov.panX, cy = res.overlay.cy[fi] - base * 0.05 + ov.panY;
+    const crop = { x: cx - sw / 2, y: cy - sh / 2, side: sw };
+    ovCtx.fillStyle = '#05090d'; ovCtx.fillRect(0, 0, W, H);
+    if (st.videoOk && vP.readyState >= 2) { try { ovCtx.drawImage(vP, crop.x, crop.y, sw, sh, 0, 0, W, H); } catch (e) { /* 影格還沒好 */ } }
+    ovCtx.fillStyle = 'rgba(8,16,23,0.32)'; ovCtx.fillRect(0, 0, W, H);
+    drawSkeleton(ovCtx, frameAt(raw.img, f), crop, W, res.hand, false, false, Math.min(W, H));
   }
 
   // ================= 主迴圈 =================
