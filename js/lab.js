@@ -1086,7 +1086,8 @@
   // ================= 手機下拉強制更新 =================
   // 在頁面最上方往下拉：出現旋轉圖示，拉過門檻放開就從伺服器重新載入（網址加時間戳避開快取）
   (function pullToRefresh() {
-    const TH = 70, MAX = 120;
+    // 手指先拉過 DEAD（px）才出現圖示；再拉到 d ≥ TH 才算要更新（總共約 DEAD + TH×2 ≈ 250 px），避免誤觸
+    const DEAD = 90, TH = 80, MAX = 120;
     const el = document.createElement('div');
     el.className = 'ptr'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
     el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span class="ptr-t">下拉更新</span>';
@@ -1103,9 +1104,10 @@
       if (y0 == null || busy) return;
       const dy = e.touches[0].clientY - y0;
       if (dy <= 0 || window.scrollY > 0) { if (pulling) reset(); return; }
-      pulling = true;
       if (e.cancelable) e.preventDefault();
-      d = Math.min(MAX, dy * 0.5);
+      if (dy < DEAD) { if (pulling) { el.classList.remove('show', 'ready'); place(0); d = 0; } return; }
+      pulling = true;
+      d = Math.min(MAX, (dy - DEAD) * 0.5);
       el.classList.add('show'); el.classList.toggle('ready', d >= TH);
       place(Math.min(d, TH + 10) + 10);
       svg.style.transform = `rotate(${d * 4}deg)`;
