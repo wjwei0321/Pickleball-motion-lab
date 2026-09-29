@@ -279,6 +279,9 @@ table.data td.bad{color:var(--bad);font-weight:600} table.data td.warn{color:var
 .qcard.ex{border-style:dashed;border-color:rgba(255,77,109,.55)}
 .qcard.ex .qthumb img{opacity:.35;filter:grayscale(1)}
 .qcard .extag{font:600 11px var(--f-body);color:#fff;background:var(--bad);padding:1px 8px;border-radius:5px}
+.qcnext{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font:600 15px var(--f-body);color:#1a1403;background:var(--player);border:0;border-radius:10px;padding:11px 14px;cursor:pointer;box-shadow:0 0 16px rgba(255,210,63,.3)}
+.qcnext span{font-size:18px;animation:qcbob 1.2s ease-in-out infinite}
+@keyframes qcbob{50%{transform:translateY(3px)}}
 .qcmsg{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ok);background:rgba(123,224,168,.08);border:1px solid rgba(123,224,168,.4);border-radius:10px;padding:8px 12px}
 .qthumb{aspect-ratio:480/170;width:100%;border-radius:7px;background:#05090d;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px}
 .qthumb img{width:100%;height:100%;display:block}
@@ -386,6 +389,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是橘色）、是不是真的有擊球，球種判斷錯了可以直接改，勾選或改球種後<b>會立刻自動重新計算</b>，不需要另外按確認；取消勾選就復原。</p>
     <div class="crow"><span class="lbl">慣用手</span><select class="inp" id="handSel" aria-label="慣用手"></select></div>
     <p class="qcmsg" id="qcMsg" role="status" aria-live="polite" hidden></p>
+    <button class="qcnext" id="qcNext" hidden>請往下滑看動作分析報告 <span aria-hidden="true">↓</span></button>
     <div class="qc" id="qc"></div>
   </section>
   <div class="upbar" id="upbar" hidden>

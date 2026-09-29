@@ -525,7 +525,7 @@
     }, () => st.cancel, st.range ? { f0: Math.round(st.range.a * FPS), f1: Math.floor(st.range.b * FPS) } : null);
     $('procEta').textContent = '';
     raw.name = st.file.name; raw.duration = vA.duration; raw.srcW = vA.videoWidth; raw.srcH = vA.videoHeight;
-    st.raw = raw; st.overrides = {}; clearThumbs(); resetZoom(); $('qcMsg').hidden = true;
+    st.raw = raw; st.overrides = {}; clearThumbs(); resetZoom(); $('qcMsg').hidden = true; $('qcNext').hidden = true;
     stepUI(4, `偵測完成：${(raw.M || raw.N) - raw.filled} 格抓到、${raw.filled} 格用插值補齊`, 0.92);
     await new Promise((r) => setTimeout(r, 30));
     stepUI(5, '找出擊球…', 0.94);
@@ -750,9 +750,10 @@
       analyzeAndBuild(false);
       const left = st.res.shots.filter((x) => !x.excluded).length;
       $('qcMsg').textContent = cb.checked ? `✓ 已更新：${when} 那一拍已排除，${left === 0 ? '目前沒有任何擊球' : left === 1 ? '剩下 1 拍，重新編號為第 1 拍' : `剩下 ${left} 拍，重新編號為第 1–${left} 拍`}，所有數據都已重新計算（標頭、問題、逐拍數據、矯正版）。` : `✓ 已更新：${when} 那一拍已加回，現在共 ${left} 拍，已重新編號並重新計算。`;
-      $('qcMsg').hidden = false; }));
-    if (st.qcMsg) { $('qcMsg').textContent = st.qcMsg; $('qcMsg').hidden = false; st.qcMsg = null; }
+      $('qcMsg').hidden = false; $('qcNext').hidden = false; }));
+    if (st.qcMsg) { $('qcMsg').textContent = st.qcMsg; $('qcMsg').hidden = false; $('qcNext').hidden = false; st.qcMsg = null; }
   }
+  $('qcNext').addEventListener('click', () => settleScrollTo($('upbar').hidden ? $('lab') : $('upbar')));
   $('handSel').addEventListener('change', () => { st.hand = $('handSel').value; st.overrides = {}; clearThumbs(); analyzeAndBuild(false); makeThumbs(); });
 
   function buildMethod() {
