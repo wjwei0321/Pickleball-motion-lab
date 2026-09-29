@@ -756,28 +756,10 @@
   $('qcNext').addEventListener('click', () => settleScrollTo($('upbar').hidden ? $('lab') : $('upbar')));
   $('handSel').addEventListener('change', () => { st.hand = $('handSel').value; st.overrides = {}; clearThumbs(); analyzeAndBuild(false); makeThumbs(); });
 
-  function buildMethod() {
-    const { res, raw } = st, act = res.shots.filter((s) => !s.excluded);
-    const APPLIED = { bend: '上半身繞髖中點扶正到目標前傾', legs: '擊球前髖部下降最多 10 cm，腳踝固定、用大腿與小腿長度不變的兩段式反向運動學重算膝蓋', late: '擊球前 6 格到後 2 格，持拍手前移到離髖中點約 25 cm', swing: '小球／截擊的引拍路徑按比例縮短到 25 cm 內', turn: '抽球前上半身多轉到約 45°（髖跟著 40%、膝 20%）', drop: '兩拍之間持拍手移到胸口高度、身體前方約 30 cm', offhand: '擊球時非持拍手收回身體前方', follow: '小球／吊球收拍往前送、最高點限制在胸口', serve: '發球擊球點壓到肚臍以下' };
-    const li = [
-      `<b>影片</b>：${esc(raw.name)}，${raw.srcW}×${raw.srcH}，${raw.duration.toFixed(1)} 秒，瀏覽器自動轉正方向，統一以 30fps 取樣共 ${raw.N} 格。`,
-      `<b>姿勢偵測</b>：MediaPipe Pose Landmarker（${st.model === 'heavy' ? 'heavy' : 'full'}，float16，${window.PBPose?.delegate || ''}），每格 33 個關節點（2D + 3D）。以上一格關節外框 ×2.2 的正方形裁切追蹤、放大到 768 px 再偵測；髖中點跳動超過身高 40% 視為追到別人，丟棄改用插值。`,
-      `<b>分析片段</b>：${raw.range ? `${A.fmtTime(raw.range.f0 / FPS)}–${A.fmtTime(raw.range.f1 / FPS)}（${raw.M} 格）` : '整支影片'}。`,
-      `<b>偵測結果</b>：${(raw.M || raw.N) - raw.filled} 格直接抓到、${raw.filled} 格（${(raw.filled / (raw.M || raw.N) * 100).toFixed(1)}%）用前後格線性插值補齊；因疑似追到隊友而丟棄 ${raw.jumps} 次；處理時間 ${raw.seconds.toFixed(0)} 秒。`,
-      `<b>找擊球</b>：3D 座標先做 5 格移動平均，找持拍手腕速度的局部最大值（±8 格）。> 3 m/s 算大動作（抽球、扣殺、發球），1.2–3 m/s 算小動作（小球、截擊、吊球）。慣用手${res.handAuto ? '由兩手速度自動判斷為' : '由你指定為'}${res.hand === 'R' ? '右手' : '左手'}。`,
-      `<b>擊球格全部是推估</b>：匹克球是洞洞塑膠球，網頁無法確認球碰到拍面的那一格，一律用速度峰值 +1 格，並標「推估」。球種也是自動判斷，可以在「擊球確認」修改。`,
-      `<b>單一鏡頭的 3D 誤差</b>：角度約 ±5–10°，距離約 ±5–10 cm。正面拍攝時，「轉肩」「擊球點在身前」這類水平轉動與前後距離的數字誤差更大，當參考就好。肚臍高度以髖中點往上 10 cm 估計。`,
-      `<b>球拍位置是推估</b>：從手腕沿「前臂方向 55% + 手掌方向 45%」延伸畫出，不是真的偵測到球拍。`,
-      `<b>場地只是背景</b>：單一鏡頭無法得知球員在場上的實際位置，球場依該拍的擊球方向擺在球員前方合理的位置。`,
-      `<b>矯正版</b>：用你自己的動作資料修改，不是套模板，而且只修和診斷出的問題有關的部分（其他保留原本節奏），每段用平滑曲線過渡。這次做了：${res.applied.length ? res.applied.map((k) => APPLIED[k]).join('；') : '沒有需要修正的項目'}。`,
-      `<b>原始影片（疊骨架）</b>：以髖中點為中心裁切（31 格移動平均避免晃動），裁切邊長＝身體像素高度 ×2.3，只畫目標球員的骨架；時間軸以影片時間 ×30 對齊每一格。`,
-    ];
-    $('method').innerHTML = li.map((x) => `<li>${x}</li>`).join('');
-  }
   function buildAll() {
     $('wrap').classList.remove('landing');
-    buildHeader(); buildShots(); buildProblems(); buildGoods(); buildTable(); buildQC(); buildMethod();
-    ['secProblems', 'secGood', 'secTable', 'secQC', 'secMethod'].forEach((id) => { $(id).hidden = false; });
+    buildHeader(); buildShots(); buildProblems(); buildGoods(); buildTable(); buildQC();
+    ['secProblems', 'secGood', 'secTable', 'secQC'].forEach((id) => { $(id).hidden = false; });
     const has = st.res.shots.some((s) => !s.excluded);
     $('controls').hidden = false; $('hudL').hidden = !has; $('hudR').hidden = !has; $('empty3d').hidden = has;
     if (!has) { figP.root.visible = figC.root.visible = false; clearGroup(annP); clearGroup(annC); st.callouts?.forEach((c) => c.el.remove()); st.callouts = null; }
