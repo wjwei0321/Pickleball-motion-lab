@@ -465,7 +465,7 @@
       })().catch(() => {});
       upd('B'); previewAt(0);
       $('trim').hidden = false;
-      $('trim').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'nearest' });
+      settleScrollTo($('trim')); // 標題「選擇要分析的片段」對齊畫面頂端
       const finish = async (ok) => {
         alive = false; vT.pause(); await thumbJob; $('trim').hidden = true;
         if (ok) resolve({ a: +IA.value, b: +IB.value }); else reject(new Error('已取消'));
@@ -499,7 +499,7 @@
     $('pickGo').disabled = true;
     stepUI(2, '請選擇要分析的球員', 0.18);
     $('procLine').hidden = $('cancelRow').hidden = true; // 選人時不需要狀態列和取消鍵
-    $('picker').scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'nearest' });
+    settleScrollTo($('picker')); // 標題「要分析哪一位？」對齊畫面頂端
   }
   $('pickWrap').addEventListener('click', (e) => {
     const r = $('pickCv').getBoundingClientRect(), W = vA.videoWidth, H = vA.videoHeight;
@@ -518,6 +518,7 @@
     $('picker').hidden = true;
     $('procLine').hidden = $('cancelRow').hidden = false;
     stepUI(3, '逐格姿勢偵測中…', 0.2);
+    settleScrollTo($('lockMsg')); // 「分析進行中…」對齊畫面頂端，下面接步驟和進度
     const raw = await P.track(vA, st.seed, st.pickT, (d, n, eta) => {
       stepUI(3, `逐格姿勢偵測 ${d} / ${n} 格`, 0.2 + 0.7 * d / n);
       $('procEta').textContent = `剩約 ${Math.ceil(eta)} 秒`;
