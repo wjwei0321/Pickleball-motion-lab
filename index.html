@@ -197,7 +197,8 @@ button,select,input{font:inherit;color:inherit}
 .card h3{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .vcard{height:var(--stageH);min-height:420px}
 .ovwrap{position:relative;flex:1;min-height:0;max-width:100%;border-radius:8px;overflow:hidden;background:#05090d}
-.ovwrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.ovwrap .ovvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.ovwrap canvas{position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
 .ovwrap canvas.drag{cursor:grabbing}
 @media (max-width:980px){.vcard{height:auto;min-height:0}.ovwrap{flex:none;height:min(70vh,560px)}}
 .zoombar{position:absolute;right:8px;bottom:8px;display:flex;gap:4px;align-items:center;z-index:2}
@@ -219,6 +220,7 @@ details.card[open] .sumchips .tog .o{display:none} details.card:not([open]) .sum
 .mrow .nm::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--sub);flex:none}
 .mrow.ok .nm::before{background:var(--ok)} .mrow.warn .nm::before{background:var(--warn)} .mrow.bad .nm::before{background:var(--bad)}
 .mrow .vv{font-family:var(--f-mono);font-size:12px;text-align:right;white-space:nowrap}
+.mrow .vv .same,.co .v .same{color:var(--sub);font-family:var(--f-body);font-size:.92em}
 .mrow .vv .p{color:var(--player)} .mrow .vv .c{color:var(--fix)}
 .mrow .tg{grid-column:1/-1;color:var(--sub);font-size:11px;padding-left:14px}
 .mrow.na{opacity:.45}
@@ -446,7 +448,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
       <aside class="side">
         <div class="card vcard">
           <h3>原始影片 <span class="tag" id="ovTag">—</span></h3>
-          <div class="ovwrap" id="ovWrap"><canvas id="ovCv" width="540" height="540" aria-label="原始影片（疊上骨架），可用滑鼠滾輪或兩指縮放、拖曳移動"></canvas>
+          <div class="ovwrap" id="ovWrap"><video id="vP" class="ovvid" muted playsinline preload="auto" aria-hidden="true"></video><canvas id="ovCv" width="540" height="540" aria-label="原始影片（疊上骨架），可用滑鼠滾輪或兩指縮放、拖曳移動"></canvas>
             <span class="ovhint" id="ovHint">滾輪／兩指縮放 · 拖曳移動 · 雙擊重設</span>
             <div class="zoombar"><button class="btn" id="zOut" aria-label="縮小">−</button><span class="zv" id="zVal">100%</span><button class="btn" id="zIn" aria-label="放大">＋</button><button class="btn" id="zReset">重設</button></div>
           </div>
@@ -480,7 +482,6 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
   </section>
 </div></div>
 
-<video id="vP" class="hiddenvid" muted playsinline preload="auto"></video>
 <video id="vA" class="hiddenvid" muted playsinline preload="auto"></video>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

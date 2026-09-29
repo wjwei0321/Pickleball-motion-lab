@@ -551,7 +551,7 @@
     buildAll();
     const act = res.shots.filter((s) => !s.excluded);
     const keep = act.find((s) => s.peak === st.shotPeak); // 重新編號後，停在同一拍
-    selectShot(act.length ? (keep || act[0]).idx : -1, first && !RM);
+    selectShot(act.length ? (keep || act[0]).idx : -1, first);
     if (first) { makeThumbs(); settleScrollTo($('secQC')); }
   }
 
@@ -623,6 +623,13 @@
     const M = A.METRICS[k];
     return (v > 0 && (k === 'serveH' || k === 'serveVy') ? '+' : '') + v.toFixed(M.dec) + (M.unit.startsWith('×') ? '×' : M.unit === '°' ? '°' : ' ' + M.unit);
   }
+  // 矯正版有沒有改這一項：數值差很小就算沒改
+  function fixedPart(k, s) {
+    const a = s.m[k], b = s.cm?.[k];
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return `→ <span class="c">${fmtV(k, b, s)}</span>`;
+    const same = k === 'stance' ? Math.abs(a - b) < 0.02 : k === 'follow' && s.type === 'drive' ? (a < 5) === (b < 5) : Math.abs(a - b) < 2;
+    return same ? '<span class="same">不需修正</span>' : `→ <span class="c">${fmtV(k, b, s)}</span>`;
+  }
   const statusCls = (x) => (x === 'bad' ? 'bad' : x === 'warn' ? 'warn' : x === 'ok' ? 'ok' : 'na');
 
   // ---------- 選拍按鈕 / 表 / 卡片 ----------
@@ -659,7 +666,7 @@
     const hand = s.type === 'serve' ? '' : s.backhand ? (s.twoHanded ? '雙手反手' : '反手') : '正手';
     const keys = ['lean', 'knee', 'front', 'backswing', 'turn', 'ready', 'offhand', 'follow', 'serveH', 'serveVy', 'stance'].filter((k) => s.st[k] !== 'na');
     $('scBody').innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px"><span class="tag">${A.TYPES[s.type].name}${hand ? '・' + hand : ''}</span><span class="tag mono">${A.fmtTime(s.c / FPS)} · 第 ${s.c} 格</span><span class="tag est">擊球格推估</span></div>` +
-      keys.map((k) => `<div class="mrow ${statusCls(s.st[k])}"><span class="nm">${A.METRICS[k].label}</span><span class="vv"><span class="p">${fmtV(k, s.m[k], s)}</span> → <span class="c">${fmtV(k, s.cm?.[k], s)}</span></span><span class="tg">目標 ${A.target(k, s.type)}</span></div>`).join('');
+      keys.map((k) => `<div class="mrow ${statusCls(s.st[k])}"><span class="nm">${A.METRICS[k].label}</span><span class="vv"><span class="p">${fmtV(k, s.m[k], s)}</span> ${fixedPart(k, s)}</span><span class="tg">目標 ${A.target(k, s.type)}</span></div>`).join('');
   }
 
   // ---------- 問題卡片 ----------
@@ -870,7 +877,7 @@
     st.frozen = false; st.frozeDone = false; $('impact').hidden = true;
     seekFrame(s.start);
     st.lastF = s.start;
-    if (autoplay && !RM) play(); else pause();
+    if (autoplay) play(); else pause();
   }
   function seekFrame(f) {
     st.clockT = f / FPS; st.vfTime = null; st.seekTarget = f / FPS; // 跳格後等新的一格顯示再用它的時間
@@ -882,11 +889,15 @@
     vP.playbackRate = st.speed;
     vP.play().catch((e) => {
       if (e && e.name === 'NotSupportedError') { st.videoOk = false; return; }
-      if (e && e.name === 'NotAllowedError') { pause(); return; } // 瀏覽器擋自動播放，等使用者按播放
+      if (e && e.name === 'NotAllowedError') return; // 瀏覽器暫時不讓播（例如畫面外），維持「播放中」狀態，看得到或一碰螢幕就會開始
       // 還在載入（AbortError）：可以播時再試一次
       vP.addEventListener('canplay', () => { if (st.playing && !st.frozen && vP.paused) vP.play().catch(() => {}); }, { once: true });
     });
   }
+  // iPhone 只自動播放「在畫面內」的靜音影片：影片區捲進畫面或使用者一碰螢幕時，補一次播放
+  const kick = () => { if (st.playing && !st.frozen && st.videoOk && vP.paused) vP.play().catch(() => {}); };
+  new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) kick(); }, { threshold: 0.1 }).observe($('ovWrap'));
+  window.addEventListener('pointerdown', kick, { passive: true });
   function play() { st.playing = true; $('playBtn').textContent = '❚❚ 暫停'; $('playBtn').setAttribute('aria-pressed', 'true'); startVideo(); }
   function pause() { st.playing = false; st.frozen = false; $('impact').hidden = true; $('playBtn').textContent = '▶ 播放'; $('playBtn').setAttribute('aria-pressed', 'false'); vP.pause(); }
   $('playBtn').addEventListener('click', () => (st.playing ? pause() : play()));
@@ -1035,7 +1046,7 @@
     layer.querySelectorAll('.co').forEach((n) => n.remove());
     st.callouts = items.map(([k, anc]) => {
       const el = document.createElement('div'); el.className = `co ${statusCls(s.st[k])}`;
-      el.innerHTML = `<span class="t">${A.METRICS[k].label} · 目標 ${esc(A.target(k, s.type))}</span><span class="v"><span class="p">${fmtV(k, s.m[k], s)}</span> → <span class="c">${fmtV(k, s.cm?.[k], s)}</span></span>`;
+      el.innerHTML = `<span class="t">${A.METRICS[k].label} · 目標 ${esc(A.target(k, s.type))}</span><span class="v"><span class="p">${fmtV(k, s.m[k], s)}</span> ${fixedPart(k, s)}</span>`;
       el.hidden = true; layer.appendChild(el);
       return { el, anchor: anc(), k, w: 0, h: 0 };
     });
