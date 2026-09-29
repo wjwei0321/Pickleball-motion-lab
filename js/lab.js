@@ -479,12 +479,13 @@
       bits.push(`最亂的一段在 ${A.fmtTime(Math.max(0, d.worst.start) / FPS)}–${A.fmtTime(d.worst.end / FPS)}（第 ${d.worst.idx + 1} 拍${probs.length ? '，' + probs.slice(0, 2).join('、') + '超標' : ''}）`);
     }
     const s1 = bits.join('；') + '。';
-    const s2 = d.primary.length ? `主要問題：${d.primary.map((p) => `「${p.title}」（${p.shots.length}/${p.applicable} 拍）`).join('、')}。` : '沒有任何問題在 2 拍以上重複出現。';
+    const nums = (arr) => arr.map((i) => i + 1).join('、');
+    const s2 = d.primary.length ? `主要問題：${d.primary.map((p) => `「${p.title}」（${p.applicable} 拍中有 ${p.shots.length} 拍：第 ${nums(p.shots)} 拍）`).join('、')}。` : '沒有任何問題在 2 拍以上重複出現。';
     $('summary').textContent = `${s1}${s2}擊球格是用手腕速度推估的，數字當作趨勢參考。`;
     const chips = [];
-    d.primary.forEach((p) => chips.push(`<span class="chip bad">${esc(p.short)}<span class="mono">${p.shots.length} / ${p.applicable} 球</span></span>`));
-    d.secondary.slice(0, 2).forEach((p) => chips.push(`<span class="chip bad ref">${esc(p.short)}（參考）<span class="mono">${p.shots.length} / ${p.applicable} 球</span></span>`));
-    d.strengths.forEach((s) => chips.push(`<span class="chip ok">${esc(s.title)}<span class="mono">${s.count} / ${s.of} 球</span></span>`));
+    d.primary.forEach((p) => chips.push(`<span class="chip bad">${esc(p.short)}<span class="mono">${p.applicable} 拍中 ${p.shots.length} 拍</span></span>`));
+    d.secondary.slice(0, 2).forEach((p) => chips.push(`<span class="chip bad ref">${esc(p.short)}（參考）<span class="mono">${p.applicable} 拍中 ${p.shots.length} 拍</span></span>`));
+    d.strengths.forEach((s) => chips.push(`<span class="chip ok">${esc(s.title)}${s.metric ? `<span class="mono">${s.of} 拍中 ${s.count} 拍</span>` : ''}</span>`));
     $('chips').innerHTML = chips.join('');
   }
 
@@ -574,7 +575,7 @@
     const vals = bad.map((s) => `第 ${s.idx + 1} 拍 <span class="mono">${fmtV(p.metric, s.m[p.metric], s)}</span>`).join('、');
     const tgts = [...new Set(bad.map((s) => A.target(p.metric, s.type)))].join(' / ');
     return `<article class="pcard ${cls}"><header><h3>${esc(p.title)}</h3><span class="sev ${cls}">${p.severity === '參考' ? '參考' : '影響 ' + p.severity}</span></header>
-      <p class="data">${p.shots.length} / ${p.applicable} 拍超標：${vals}。目標 ${esc(tgts)}。</p>
+      <p class="data">${p.applicable} 拍中有 ${p.shots.length} 拍超標：${vals}。目標 ${esc(tgts)}。</p>
       ${barChart(p)}
       <dl><dt>為什麼</dt><dd>${esc(p.why)}</dd><dt>改法</dt><dd>${esc(p.fix)}</dd><dt>練習</dt><dd>${esc(p.drill)}</dd></dl>
       <div class="act"><button class="btn" data-demo="${p.id}">看示範（第 ${p.demo + 1} 拍）</button></div></article>`;
@@ -591,7 +592,7 @@
   }
   function buildGoods() {
     const d = st.res.diag;
-    $('goods').innerHTML = d.strengths.map((s) => `<article class="scard"><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p><span class="mono">${s.metric ? `${s.count} / ${s.of} 拍做到` : '整體最標準'}</span></article>`).join('') || '<p style="color:var(--sub)">拍數太少，還看不出穩定的好習慣。</p>';
+    $('goods').innerHTML = d.strengths.map((s) => `<article class="scard"><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p><span class="mono">${s.metric ? `${s.of} 拍中 ${s.count} 拍做到` : '整體最標準'}</span></article>`).join('') || '<p style="color:var(--sub)">拍數太少，還看不出穩定的好習慣。</p>';
   }
   function buildQC() {
     const res = st.res;
