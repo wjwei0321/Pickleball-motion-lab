@@ -463,7 +463,7 @@
     const { res, raw } = st, act = res.shots.filter((s) => !s.excluded), d = res.diag;
     const counts = {}; act.forEach((s) => { counts[s.type] = (counts[s.type] || 0) + 1; });
     const typeStr = Object.entries(counts).map(([k, v]) => `${A.TYPES[k].short} ${v}`).join('・') || '沒有偵測到擊球';
-    $('eyebrow').innerHTML = `<b>MOTION ANALYSIS · PICKLEBALL</b><span>${act.length} 拍：${esc(typeStr)}</span><span>${esc(raw.name)}</span><span>${A.fmtTime(raw.duration)}</span><span>${raw.N} 格</span><span>33 關節點 3D 重建</span>`;
+    $('eyebrow').innerHTML = `<b>MOTION ANALYSIS · PICKLEBALL</b><span>${act.length} 拍：${esc(typeStr)}</span><span>${esc(raw.name)}</span><span>${A.fmtTime(raw.duration)}</span><span>${raw.N} 格</span>`;
     if (!act.length) {
       $('title').innerHTML = '這支影片<em>沒有抓到擊球</em>';
       $('summary').textContent = '手腕速度一直沒有出現明顯的揮拍峰值。可能是球員太小、被擋住，或是拍到的片段沒有擊球。可以到下方「擊球確認」看骨架有沒有對準，或換一支影片。';
