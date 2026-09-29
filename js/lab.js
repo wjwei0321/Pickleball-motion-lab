@@ -4,7 +4,7 @@
   const A = window.PBAnalyze, V = A.V, J = A.J, FPS = 30;
   const $ = (id) => document.getElementById(id);
   const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const COL = { player: 0xFF7A59, fix: 0x5FE3F0, bad: 0xFF4D6D, ok: 0x7BE0A8, warn: 0xFFC857, kitchen: 0xB9F227, line: 0x1D3243, sub: 0x7F97A6 };
+  const COL = { player: 0xFFD23F, fix: 0x5FE3F0, bad: 0xFF4D6D, ok: 0x7BE0A8, warn: 0xFF9F43, kitchen: 0xB9F227, line: 0x1D3243, sub: 0x7F97A6 };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // ================= 狀態 =================
@@ -88,7 +88,7 @@
   const arrow = (function () {
     const s = new THREE.Shape();
     s.moveTo(-0.025, 0.55); s.lineTo(0.025, 0.55); s.lineTo(0.025, 1.05); s.lineTo(0.08, 1.05); s.lineTo(0, 1.25); s.lineTo(-0.08, 1.05); s.lineTo(-0.025, 1.05); s.closePath();
-    const m = new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshBasicMaterial({ color: COL.warn, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshBasicMaterial({ color: COL.player, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide }));
     m.rotation.x = Math.PI / 2; // shape 的 +y → 世界 +z
     const g = new THREE.Group(); g.add(m); g.position.y = 0.005; scene.add(g); return g;
   })();
@@ -464,7 +464,7 @@
     const counts = {}; act.forEach((s) => { counts[s.type] = (counts[s.type] || 0) + 1; });
     const typeStr = Object.entries(counts).map(([k, v]) => `${A.TYPES[k].short} ${v}`).join('・') || '沒有偵測到擊球';
     $('ebMeta').textContent = '';
-    $('eyebrow').innerHTML = `<b>MOTION LAB · PICKLEBALL</b><span>${act.length} 拍：${esc(typeStr)}</span><span>${esc(raw.name)}</span><span>${A.fmtTime(raw.duration)}</span><span>${raw.N} 格</span><span>33 關節點 3D 重建</span>`;
+    $('eyebrow').innerHTML = `<b>MOTION ANALYSIS · PICKLEBALL</b><span>${act.length} 拍：${esc(typeStr)}</span><span>${esc(raw.name)}</span><span>${A.fmtTime(raw.duration)}</span><span>${raw.N} 格</span><span>33 關節點 3D 重建</span>`;
     if (!act.length) {
       $('title').innerHTML = '這支影片<em>沒有抓到擊球</em>';
       $('summary').textContent = '手腕速度一直沒有出現明顯的揮拍峰值。可能是球員太小、被擋住，或是拍到的片段沒有擊球。可以到下方「擊球確認」看骨架有沒有對準，或換一支影片。';
@@ -558,7 +558,7 @@
       if (!Number.isFinite(v)) {
         out += `<text x="${cx}" y="${y(base0) - 4}" text-anchor="middle" font-size="${n > 10 ? 6 : 8}" fill="#46606f">${n > 12 ? '–' : '不適用'}</text>`;
       } else {
-        const col = stt === 'bad' ? '#FF4D6D' : stt === 'warn' ? '#FFC857' : '#7BE0A8';
+        const col = stt === 'bad' ? '#FF4D6D' : stt === 'warn' ? '#FF9F43' : '#7BE0A8';
         const y0 = y(base0), y1 = y(v);
         out += `<rect x="${x}" y="${Math.min(y0, y1)}" width="${w}" height="${Math.max(1.5, Math.abs(y1 - y0))}" rx="2" fill="${col}" fill-opacity="${stt === 'ok' ? 0.55 : 0.9}"/>`;
       }
@@ -655,7 +655,7 @@
         const c2 = sub.getContext('2d');
         drawSkeleton(c2, I, crop, 160, res.hand, true, i === 1);
         ctx.drawImage(sub, i * 160, 5);
-        ctx.fillStyle = i === 1 ? '#FFC857' : '#7F97A6'; ctx.font = '11px IBM Plex Mono, monospace';
+        ctx.fillStyle = i === 1 ? '#FFD23F' : '#7F97A6'; ctx.font = '11px IBM Plex Mono, monospace';
         ctx.fillText(i === 1 ? `擊球 ${f}` : `${f - s.c > 0 ? '+' : ''}${f - s.c}`, i * 160 + 6, 18);
       }
       st.thumbs[s.peak] = cv;
@@ -670,14 +670,14 @@
       for (const [a, b] of BONES) {
         const pa = px(a), pb = px(b);
         const rk = qc && racket.has(a) && racket.has(b);
-        ctx.strokeStyle = pass === 0 ? 'rgba(255,122,89,0.28)' : rk ? '#FFC857' : '#FF7A59';
+        ctx.strokeStyle = pass === 0 ? 'rgba(255,210,63,0.28)' : rk ? '#FF9F43' : '#FFD23F';
         ctx.lineWidth = pass === 0 ? size / 60 : Math.max(1.5, size / 180);
         ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke();
       }
     }
     ctx.fillStyle = '#fff';
     for (const j of A.KEEP) { const p = px(j); ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, size / 200), 0, Math.PI * 2); ctx.fill(); }
-    if (emph) { ctx.strokeStyle = '#FFC857'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, size - 2, size - 2); }
+    if (emph) { ctx.strokeStyle = '#FFD23F'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, size - 2, size - 2); }
   }
 
   // ================= 播放 =================
@@ -817,18 +817,18 @@
     const g = (F, j) => tv(V.get(F, j));
     const hmP = tv(A.hipMid(FP)), hmC = tv(A.hipMid(FC));
     // 上身前傾
-    arc(annP, hmP, [0, 1, 0], V.sub(A.shMid(FP), A.hipMid(FP)), 0.38, COL.warn, 0.14);
+    arc(annP, hmP, [0, 1, 0], V.sub(A.shMid(FP), A.hipMid(FP)), 0.38, COL.player, 0.14);
     arc(annC, hmC, [0, 1, 0], V.sub(A.shMid(FC), A.hipMid(FC)), 0.31, COL.fix, 0.12);
     dashed(annP, hmP, hmP.clone().add(new THREE.Vector3(0, 0.68, 0)), 0xDCE8EE, 0.6);
     // 膝蓋
     const kneeSide = A.kneeAng(FP, 'L') < A.kneeAng(FP, 'R') ? 'L' : 'R';
     const kj = kneeSide === 'L' ? [23, 25, 27] : [24, 26, 28];
-    for (const [F, grp, col] of [[FP, annP, COL.warn], [FC, annC, COL.fix]]) {
+    for (const [F, grp, col] of [[FP, annP, COL.player], [FC, annC, COL.fix]]) {
       const k = g(F, kj[1]);
       arc(grp, k, V.sub(V.get(F, kj[0]), V.get(F, kj[1])), V.sub(V.get(F, kj[2]), V.get(F, kj[1])), 0.13, col, 0.16);
     }
     // 擊球點前後距離：地面虛線
-    for (const [F, grp, col, hm] of [[FP, annP, COL.warn, hmP], [FC, annC, COL.fix, hmC]]) {
+    for (const [F, grp, col, hm] of [[FP, annP, COL.player, hmP], [FC, annC, COL.fix, hmC]]) {
       const w = g(F, H.wr);
       const a = new THREE.Vector3(hm.x, 0.012, hm.z), fw = tv(s.x.fwd), d = w.clone().sub(hm).dot(fw);
       dashed(grp, a, a.clone().add(fw.multiplyScalar(d)), col, 0.95);
@@ -836,7 +836,7 @@
     // 發球：肚臍高度線
     if (s.type === 'serve') {
       const ny = hmP.y + 0.10, sd = tv(s.x.side);
-      dashed(annP, new THREE.Vector3(hmP.x, ny, hmP.z).add(sd.clone().multiplyScalar(-0.45)), new THREE.Vector3(hmP.x, ny, hmP.z).add(sd.clone().multiplyScalar(0.45)), COL.warn, 0.95);
+      dashed(annP, new THREE.Vector3(hmP.x, ny, hmP.z).add(sd.clone().multiplyScalar(-0.45)), new THREE.Vector3(hmP.x, ny, hmP.z).add(sd.clone().multiplyScalar(0.45)), COL.player, 0.95);
     }
     // 目標圈：準備姿勢、收拍
     const fr = Math.max(0, c - 16), ff = Math.min(res.n - 1, c + 10);
@@ -933,7 +933,7 @@
         const bx = side === 'L' ? colX(side, bw) + (bw - it.c.w) : colX(side, bw);
         it.c.el.style.left = `${bx}px`; it.c.el.style.top = `${it.y}px`;
         const ex = side === 'L' ? bx + it.c.w : bx, ey = it.y + it.c.h / 2, kx = side === 'L' ? ex + 10 : ex - 10;
-        const col = it.c.el.classList.contains('bad') ? '#FF4D6D' : it.c.el.classList.contains('warn') ? '#FFC857' : '#7BE0A8';
+        const col = it.c.el.classList.contains('bad') ? '#FF4D6D' : it.c.el.classList.contains('warn') ? '#FF9F43' : '#7BE0A8';
         lines += `<polyline points="${ex},${ey} ${kx},${ey} ${it.ax},${it.ay}" fill="none" stroke="${col}" stroke-width="1.2" opacity=".85"/><circle cx="${it.ax}" cy="${it.ay}" r="2.6" fill="${col}"/><circle cx="${it.ax}" cy="${it.ay}" r="6" fill="none" stroke="${col}" stroke-width="1" opacity=".6"/>`;
       }
     }

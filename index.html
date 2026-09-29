@@ -12,7 +12,7 @@
 :root{
   color-scheme: dark;
   --bg:#081017; --panel:#0E1A24; --panel2:#0B151E; --line:#1D3243; --text:#DCE8EE; --sub:#7F97A6;
-  --player:#FF7A59; --fix:#5FE3F0; --bad:#FF4D6D; --ok:#7BE0A8; --warn:#FFC857; --kitchen:#B9F227;
+  --player:#FFD23F; --fix:#5FE3F0; --bad:#FF4D6D; --ok:#7BE0A8; --warn:#FF9F43; --kitchen:#B9F227;
   --f-head:"Chakra Petch","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,"Noto Sans TC",monospace;
@@ -34,8 +34,8 @@ button,select,input{font:inherit;color:inherit}
 .btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;line-height:1.4;transition:border-color .15s,background .15s;white-space:nowrap}
 .btn:hover{border-color:#2d4c63}
 .btn[aria-pressed="true"],.btn.on{border-color:var(--fix);background:#0f2a33;color:#e9fbfd}
-.btn.primary{background:var(--player);border-color:var(--player);color:#1a0b06;font-weight:700}
-.btn.primary:hover{background:#ff8c70}
+.btn.primary{background:var(--player);border-color:var(--player);color:#1a1403;font-weight:700}
+.btn.primary:hover{background:#FFE07A}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
 .seg .btn{border:0;border-radius:0;border-right:1px solid var(--line)}
 .seg .btn:last-child{border-right:0}
@@ -59,7 +59,7 @@ button,select,input{font:inherit;color:inherit}
 .upload{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;background:linear-gradient(180deg,#0d1922,#0a141c);border:1px solid var(--line);border-radius:14px;padding:18px}
 @media (max-width:860px){.upload{grid-template-columns:1fr}}
 .drop{border:1.5px dashed #2a4659;border-radius:12px;padding:22px 18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;justify-content:center;min-height:190px;position:relative;transition:border-color .15s,background .15s}
-.drop.over{border-color:var(--player);background:rgba(255,122,89,.06)}
+.drop.over{border-color:var(--player);background:rgba(255,210,63,.06)}
 .drop h3{font-size:20px;font-weight:600}
 .drop p{color:var(--sub);font-size:13.5px}
 .opts{display:flex;flex-direction:column;gap:12px}
@@ -79,7 +79,7 @@ button,select,input{font:inherit;color:inherit}
 .step.done{color:#a9c6b6} .step.done::before{background:var(--ok);border-color:var(--ok)}
 @keyframes pulse{50%{opacity:.35}}
 .bar{height:8px;background:#0a141b;border:1px solid var(--line);border-radius:99px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--player),#ffb199);transition:width .2s}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--player),#FFEBA0);transition:width .2s}
 .procmsg{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px}
 .err{color:var(--bad);font-size:13.5px}
 
@@ -151,7 +151,7 @@ button,select,input{font:inherit;color:inherit}
 .mrow .tg{grid-column:1/-1;color:var(--sub);font-size:11px;padding-left:14px}
 .mrow.na{opacity:.45}
 .tag{font:500 10.5px var(--f-mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--sub);letter-spacing:.04em}
-.tag.est{border-color:rgba(255,200,87,.5);color:var(--warn)}
+.tag.est{border-color:rgba(255,159,67,.5);color:var(--warn)}
 
 /* controls */
 .controls{display:flex;flex-direction:column;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -179,7 +179,7 @@ button,select,input{font:inherit;color:inherit}
 .pcard header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .pcard h3{font-size:18px;font-weight:600}
 .sev{font:600 11px var(--f-mono);padding:2px 8px;border-radius:5px;background:rgba(255,77,109,.14);color:#ff9fb1;white-space:nowrap}
-.sev.mid{background:rgba(255,200,87,.14);color:var(--warn)} .sev.ref{background:rgba(127,151,166,.15);color:var(--sub)}
+.sev.mid{background:rgba(255,159,67,.14);color:var(--warn)} .sev.ref{background:rgba(127,151,166,.15);color:var(--sub)}
 .pcard .data{font-size:13px;color:#b9cad3}
 .pcard .data .mono{color:var(--text)}
 .pcard dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:13.5px}
@@ -223,7 +223,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
 <body>
 <div class="wrap">
   <header class="hdr">
-    <div class="eyebrow" id="eyebrow"><b>MOTION LAB · PICKLEBALL</b><span>33 關節點 3D 重建</span><span id="ebMeta">等待影片</span></div>
+    <div class="eyebrow" id="eyebrow"><b>MOTION ANALYSIS · PICKLEBALL</b><span>33 關節點 3D 重建</span><span id="ebMeta">等待影片</span></div>
     <h1 id="title">把你的匹克球動作，<em>拆成一格一格</em>來看</h1>
     <p class="sum" id="summary">上傳一段打球影片，網頁會在你的瀏覽器裡逐格找出 33 個關節點、抓出每一拍、量出身體角度，再做一個「矯正版」的你疊在旁邊一起播放。</p>
     <div class="chips" id="chips"></div>
@@ -301,7 +301,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <div class="callouts" id="callouts"><svg id="coSvg"></svg></div>
         <div class="impact" id="impact" hidden><b>IMPACT · 擊球瞬間</b><div class="pb"><i id="impactBar"></i></div></div>
         <div class="flash" id="flash"></div>
-        <div class="empty3d" id="empty3d"><div><b>3D 動作捕捉實驗室</b><p>上傳影片後，這裡會出現你的半透明人形（珊瑚橘）和矯正版（青色）疊在一起播放，旁邊是原始影片疊骨架。可以用滑鼠或手指旋轉視角。</p></div></div>
+        <div class="empty3d" id="empty3d"><div><b>3D 動作捕捉實驗室</b><p>上傳影片後，這裡會出現你的半透明人形（黃色）和矯正版（青色）疊在一起播放，旁邊是原始影片疊骨架。可以用滑鼠或手指旋轉視角。</p></div></div>
       </div>
       <aside class="side">
         <div class="card">
@@ -352,7 +352,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
   </section>
   <section class="sec" id="secQC" hidden>
     <h2>擊球確認與品質檢查 <small>每拍取擊球前、擊球、擊球後三格</small></h2>
-    <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是黃色）、是不是真的有擊球，球種判斷錯了可以直接改，改完所有數據會重新計算。</p>
+    <p style="color:#b9cad3;font-size:13.5px;max-width:90ch">擊球是用手腕速度自動抓的，輕打的小球偶爾會把「移動拍子」誤認成擊球。看一下骨架有沒有對準球員（持拍手那側是橘色）、是不是真的有擊球，球種判斷錯了可以直接改，改完所有數據會重新計算。</p>
     <div class="crow"><span class="lbl">慣用手</span><select class="inp" id="handSel" aria-label="慣用手"></select></div>
     <div class="qc" id="qc"></div>
   </section>
