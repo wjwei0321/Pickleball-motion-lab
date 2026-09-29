@@ -71,7 +71,7 @@ vercel --prod
 打開 Vercel 給的網址（例如 `https://pickleball-motion-lab.vercel.app`）：
 
 1. 頁面正常顯示標題「把你的匹克球動作，拆成一格一格來看」，瀏覽器 console 沒有紅色錯誤。
-2. 把滑鼠移到「選一支匹克球影片」區塊，等 10–30 秒，下方「偵測引擎：」那行要變成 **「就緒（full，GPU）」**（或「就緒（full，CPU）」也可以；full 是預設的快速模型）。
+2. 選一支有人的影片上傳，應該在 10–30 秒內跑到「要分析哪一位？」的選人畫面（代表偵測引擎有正常啟動）。
 3. 確認這幾個檔案能直接打開、回應 200：
    - `/models/heavy.part0.wasm`
    - `/vendor/mediapipe/wasm/vision_wasm_internal.wasm`

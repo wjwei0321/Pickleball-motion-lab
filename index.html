@@ -76,7 +76,6 @@ button,select,input{font:inherit;color:inherit}
 .opt{display:flex;flex-direction:column;gap:6px}
 .tips{color:var(--sub);font-size:13px;display:flex;flex-direction:column;gap:4px;padding-left:0;margin:0;list-style:none}
 .tips li::before{content:"› ";color:var(--player)}
-.privacy{font-size:12.5px;color:var(--ok);display:flex;gap:6px;align-items:center}
 .upbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--sub)}
 .upbar b{color:var(--text);font-weight:500}
 
@@ -269,8 +268,15 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <input type="file" id="file" accept="video/*" class="vh">
         <span class="mono" style="font-size:12px;color:var(--sub)" id="fileName"></span>
       </div>
-      <p class="privacy">● 影片只在你的瀏覽器裡處理，不會上傳到任何伺服器。</p>
-      <p class="mono" style="font-size:11.5px;color:var(--sub)">偵測引擎：<span id="engineStatus">待命（選影片時自動載入）</span></p>
+      <div class="opt" style="margin-top:4px">
+        <span class="lbl">拍攝建議</span>
+        <ul class="tips">
+          <li>從側後方約 45° 拍，手機橫放，離球員 5–8 公尺讓全身入鏡</li>
+          <li>可以的話用 60fps，小球動作很快</li>
+          <li>雙打時讓要分析的人站在畫面中間、不被隊友擋到</li>
+        </ul>
+      </div>
+      <span id="engineStatus" hidden>待命</span>
     </div>
     <div class="opts">
       <div class="opt">
@@ -287,14 +293,6 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
           <button class="btn" data-model="full" aria-pressed="true">快速（full，約 9 MB，預設）</button>
           <button class="btn" data-model="heavy" aria-pressed="false">精準（heavy，約 31 MB）</button>
         </div>
-      </div>
-      <div class="opt">
-        <span class="lbl">拍攝建議</span>
-        <ul class="tips">
-          <li>從側後方約 45° 拍，手機橫放，離球員 5–8 公尺讓全身入鏡</li>
-          <li>可以的話用 60fps，小球動作很快</li>
-          <li>雙打時讓要分析的人站在畫面中間、不被隊友擋到</li>
-        </ul>
       </div>
     </div>
     <div class="proc" id="proc" hidden>
