@@ -22,7 +22,8 @@ body{color:var(--text);font:15px/1.65 var(--f-body);margin:0}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance;letter-spacing:.01em}
 h2{font-size:20px;font-weight:600;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-h2 small{font:500 11px var(--f-mono);letter-spacing:.14em;color:var(--sub);text-transform:uppercase}
+h2 small{font:500 14px var(--f-body);letter-spacing:.02em;color:#9fb3c0;display:inline-flex;flex-wrap:wrap;gap:4px 14px}
+h2 small .k{font-weight:700} h2 small .k.bad{color:var(--bad)} h2 small .k.warn{color:var(--warn)} h2 small .k.ok{color:var(--ok)}
 p{margin:0}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--fix);outline-offset:2px;border-radius:6px}
@@ -366,7 +367,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     <div class="grid3" id="goods"></div>
   </section>
   <section class="sec" id="secTable" hidden>
-    <h2>逐拍數據 <small>紅字＝超標　黃字＝接近邊界　點一列跳到那一拍</small></h2>
+    <h2>逐拍數據 <small><span><span class="k bad">紅字</span>＝超標</span><span><span class="k warn">橘字</span>＝接近邊界</span><span>白字＝在範圍內</span><span>點一列跳到那一拍</span></small></h2>
     <div class="filters" id="filters"></div>
     <div class="tblwrap"><table class="data" id="tbl"></table></div>
   </section>

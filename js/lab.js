@@ -569,7 +569,7 @@
       out += `<line x1="${x - bw * 0.1}" x2="${x + w + bw * 0.1}" y1="${y(tg[i])}" y2="${y(tg[i])}" stroke="#DCE8EE" stroke-width="1.2" stroke-dasharray="3 2" opacity=".8"/>`;
       if (n <= 16 || i % 2 === 0) out += `<text x="${cx}" y="${H - 5}" text-anchor="middle" font-size="8.5" fill="${p.shots.includes(s.idx) ? '#FF4D6D' : '#7F97A6'}" font-family="IBM Plex Mono,monospace">${s.idx + 1}</text>`;
     });
-    return out + `</svg><div style="font-size:11px;color:var(--sub)">每根是一拍（下方數字是第幾拍）；白色虛線＝目標；單位 ${esc(A.METRICS[p.metric].unit)}</div>`;
+    return out + `</svg><div style="font-size:12.5px;color:#9fb3c0">每根是一拍（下方數字是第幾拍）；白色虛線＝目標；單位 ${esc(A.METRICS[p.metric].unit)}</div>`;
   }
   function problemCard(p) {
     const act = st.res.shots.filter((s) => !s.excluded);
@@ -585,7 +585,7 @@
   }
   function buildProblems() {
     const d = st.res.diag;
-    $('problems').innerHTML = d.primary.map(problemCard).join('') || '<p style="color:var(--sub)">沒有任何問題在 2 拍以上重複出現。下面的逐拍數據還是可以看看哪些項目接近邊界（黃字）。</p>';
+    $('problems').innerHTML = d.primary.map(problemCard).join('') || '<p style="color:var(--sub)">沒有任何問題在 2 拍以上重複出現。下面的逐拍數據還是可以看看哪些項目接近邊界（<span style="color:var(--warn)">橘字</span>）。</p>';
     $('minor').innerHTML = d.secondary.length ? `<h3 style="font-size:15px;margin:10px 0">次要（只出現 1 拍，當參考）</h3><div class="grid2">${d.secondary.map(problemCard).join('')}</div>` : '';
     document.querySelectorAll('[data-demo]').forEach((b) => b.addEventListener('click', () => {
       const p = [...d.primary, ...d.secondary].find((x) => x.id === b.dataset.demo);
