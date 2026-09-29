@@ -124,6 +124,9 @@ button,select,input{font:inherit;color:inherit}
 .trim{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
 .trimvid{position:relative;align-self:center;max-width:100%;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#05090d}
 .trimvid video{display:block;max-width:100%;max-height:min(55vh,520px);width:auto;height:auto}
+.trimvid{cursor:pointer}
+.trimplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(8,16,23,.65);border:2px solid var(--player);color:var(--player);display:flex;align-items:center;justify-content:center;font-size:22px;padding-left:4px;pointer-events:none}
+.trimplay.hide{opacity:0}
 .trimnow{position:absolute;left:8px;top:8px;background:rgba(8,16,23,.8);padding:2px 8px;border-radius:6px;font-size:12px;color:var(--text)}
 .trimbar{position:relative;height:56px;border-radius:9px;overflow:hidden;background:#0a141c;border:1px solid var(--line);touch-action:none}
 .trimbar .thumbs{position:absolute;inset:0;display:flex}
@@ -368,8 +371,8 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
     </div>
     <div class="trim" id="trim" hidden>
       <div><b style="font-family:var(--f-head);font-size:17px">選擇要分析的片段</b>
-        <p style="color:var(--sub);font-size:13.5px">拖曳下方兩個<b style="color:var(--player)">黃色把手</b>設定開始和結束，只分析打球的那一段會更快、也更準。</p></div>
-      <div class="trimvid"><video id="vT" playsinline muted preload="auto"></video><span class="trimnow mono" id="trimNow">0:00.0</span></div>
+        <p style="color:var(--sub);font-size:13.5px">拖曳下方兩個<b style="color:var(--player)">黃色把手</b>設定開始和結束，點畫面可以播放選到的這段。只分析打球的那一段會更快、也更準。</p></div>
+      <div class="trimvid" id="trimVid" role="button" tabindex="0" aria-label="播放或暫停選取的片段"><video id="vT" playsinline muted preload="auto"></video><span class="trimnow mono" id="trimNow">0:00.0</span><span class="trimplay" id="trimPlayIcon" aria-hidden="true">▶</span></div>
       <div class="trimbar" id="trimBar">
         <div class="thumbs" id="trimThumbs"></div>
         <div class="shade l" id="trimShadeL"></div><div class="shade r" id="trimShadeR"></div>
@@ -379,13 +382,7 @@ select.inp{background:var(--panel2);border:1px solid var(--line);border-radius:8
         <input type="range" id="trimB" min="0" max="1" step="0.0333" value="1" aria-label="結束時間">
       </div>
       <div class="triminfo mono" id="trimInfo"></div>
-      <div class="pickrow">
-        <button class="btn" id="trimPlay">▶ 播放這段</button>
-        <button class="btn" id="trimSetA">把目前畫面設為開始</button>
-        <button class="btn" id="trimSetB">把目前畫面設為結束</button>
-        <button class="btn" id="trimAll">整支影片</button>
-      </div>
-      <div class="pickrow"><button class="btn primary" id="trimGo">使用這段，下一步</button><button class="btn" id="trimCancel">取消</button></div>
+      <div class="pickrow"><button class="btn primary" id="trimGo">使用這段，下一步</button></div>
     </div>
     <div class="picker" id="picker" hidden>
       <div><b style="font-family:var(--f-head);font-size:17px">要分析哪一位？</b>

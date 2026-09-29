@@ -418,7 +418,7 @@
       [IA, IB].forEach((x) => { x.min = 0; x.max = dur.toFixed(3); x.step = (1 / FPS).toFixed(4); });
       IA.value = 0; IB.value = dur;
       const pct = (t) => `${(t / dur * 100).toFixed(3)}%`;
-      const setPlayLabel = () => { $('trimPlay').textContent = segPlay ? '❚❚ 暫停' : '▶ 播放這段'; };
+      const setPlayLabel = () => { $('trimPlayIcon').classList.toggle('hide', segPlay); };
       function upd(which) {
         let a = +IA.value, b = +IB.value;
         if (b - a < MINLEN) {
@@ -440,16 +440,16 @@
         const r = $('trimBar').getBoundingClientRect();
         previewAt((e.clientX - r.left) / r.width * dur);
       };
-      $('trimPlay').onclick = () => {
+      // 點預覽畫面：在選取的範圍內播放／暫停
+      const togglePlay = () => {
         if (segPlay) { previewAt(vT.currentTime); return; }
         const a = +IA.value, b = +IB.value;
         if (vT.currentTime < a || vT.currentTime >= b - 0.05) vT.currentTime = a;
         segPlay = true; setPlayLabel();
         vT.play().catch(() => { segPlay = false; setPlayLabel(); });
       };
-      $('trimSetA').onclick = () => { IA.value = Math.min(vT.currentTime, +IB.value - MINLEN); upd('A'); };
-      $('trimSetB').onclick = () => { IB.value = Math.max(vT.currentTime, +IA.value + MINLEN); upd('B'); };
-      $('trimAll').onclick = () => { IA.value = 0; IB.value = dur; upd('B'); };
+      $('trimVid').onclick = togglePlay;
+      $('trimVid').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePlay(); } };
       (function tick() {
         if (!alive) return;
         const t = vT.currentTime;
@@ -472,7 +472,6 @@
         if (ok) resolve({ a: +IA.value, b: +IB.value }); else reject(new Error('已取消'));
       };
       $('trimGo').onclick = () => finish(true);
-      $('trimCancel').onclick = () => finish(false);
     });
   }
 
@@ -821,7 +820,12 @@
     st.vfTime = null;
     if (!st.vfHooked && 'requestVideoFrameCallback' in HTMLVideoElement.prototype) {
       st.vfHooked = true;
-      const onFrame = (now, meta) => { st.vfTime = meta.mediaTime; st.vfWall = performance.now(); vP.requestVideoFrameCallback(onFrame); };
+      const onFrame = (now, meta) => {
+        vP.requestVideoFrameCallback(onFrame);
+        // 剛跳格時，瀏覽器可能還會回報一格跳格前的畫面 → 要等到接近目標時間的那一格才採用
+        if (st.seekTarget != null) { if (Math.abs(meta.mediaTime - st.seekTarget) > 0.2) return; st.seekTarget = null; }
+        st.vfTime = meta.mediaTime; st.vfWall = performance.now();
+      };
       vP.requestVideoFrameCallback(onFrame);
     }
   }
@@ -850,7 +854,7 @@
     if (autoplay && !RM) play(); else pause();
   }
   function seekFrame(f) {
-    st.clockT = f / FPS; st.vfTime = null; // 跳格後等新的一格顯示再用它的時間
+    st.clockT = f / FPS; st.vfTime = null; st.seekTarget = f / FPS; // 跳格後等新的一格顯示再用它的時間
 
     if (st.videoOk && vP.readyState >= 1) vP.currentTime = f / FPS;
   }
@@ -1182,7 +1186,7 @@
         if (st.freeze && !st.frozeDone && st.lastF < s.c && f >= s.c) {
           st.frozeDone = true;
           st.frozen = true; st.freezeEnd = now + 2600; f = s.c;
-          if (st.videoOk) { vP.pause(); vP.currentTime = s.c / FPS; } else st.clockT = s.c / FPS;
+          if (st.videoOk) { vP.pause(); vP.currentTime = s.c / FPS; st.vfTime = null; st.seekTarget = s.c / FPS; } else st.clockT = s.c / FPS;
           $('impact').hidden = false;
           if (!RM) { const fl = $('flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
         }
